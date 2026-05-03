@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body, #root { height: 100vh; overflow: hidden; }
+  :root {
+    --choco: #7B3F00;
+    --choco-light: #9B5A1A;
+    --scrollbar-color: #2c2c2c;
+  }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar-color); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--choco); }
+}
+
+@layer components {
+  .btn-choco {
+    @apply bg-choco hover:bg-choco-light text-white font-semibold rounded-full
+           transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-outline {
+    @apply border border-border bg-transparent hover:bg-card text-gray-300
+           font-medium rounded-full transition-all duration-200;
+  }
+  .input-dark {
+    @apply w-full bg-border border-none rounded-2xl px-4 py-2.5
+           text-white text-sm outline-none focus:ring-1 focus:ring-choco
+           placeholder:text-gray-500 transition-all;
+  }
+  .card-dark {
+    @apply bg-card rounded-xl border border-border/50;
+  }
+  .sidebar-item {
+    @apply flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer
+           text-gray-400 hover:text-white hover:bg-card transition-all duration-150 text-sm;
+  }
+  .sidebar-item.active {
+    @apply bg-card text-white border-l-2 border-choco;
+  }
+  .metric-card {
+    @apply bg-[#1f1f1f] rounded-2xl p-4 text-center flex flex-col items-center gap-1;
+  }
+  .code-block {
+    @apply bg-black/80 rounded-xl p-4 font-mono text-xs overflow-x-auto
+           border border-border/30 whitespace-pre-wrap leading-relaxed;
+  }
+  .message-bubble-user {
+    @apply bg-choco text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm max-w-[85%] self-end;
+  }
+  .message-bubble-ai {
+    @apply bg-card text-gray-200 rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm max-w-[85%] self-start;
+  }
+}
