@@ -7,6 +7,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { formatDistanceToNow } from 'date-fns'
 
+// ── Props now include sidebar toggle ────────────────────────────────────────
 interface ChatPanelProps {
   onOpenAuth: (mode: 'login' | 'register') => void
   onOpenSettings: () => void
@@ -78,35 +79,35 @@ export default function ChatPanel({
           return (msg.timestamp as any).$date
         }
         return msg.timestamp
-      } catch {
-        return null
-      }
+      } catch { return null }
     })()
   }))
 
   return (
+    // ── flex-1 + min-w-0 fills remaining space; flex-col stacks header/messages/input ──
     <div className="flex-1 flex flex-col bg-[#161616] min-w-0 h-full overflow-hidden">
 
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex justify-between items-center px-3 sm:px-5 py-3 bg-[#0e0e0e] border-b border-border shrink-0">
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          {/* Sidebar toggle */}
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between px-3 py-3 bg-[#0e0e0e] border-b border-[#2c2c2c] shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+
+          {/* Sidebar toggle button */}
           <button
             onClick={onToggleSidebar}
-            className="text-gray-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-card shrink-0"
             title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+            className="shrink-0 p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-[#1e1e1e] transition-colors"
           >
             {sidebarOpen
-              ? <PanelLeftClose size={17} />
-              : <PanelLeftOpen size={17} />
+              ? <PanelLeftClose size={18} />
+              : <PanelLeftOpen  size={18} />
             }
           </button>
 
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-choco/20 border border-choco/30 flex items-center justify-center shrink-0">
-            <Brain size={15} className="text-choco-light" />
+          <div className="w-8 h-8 rounded-full bg-[#7B3F00]/20 border border-[#7B3F00]/30 flex items-center justify-center shrink-0">
+            <Brain size={16} className="text-[#9B5A1A]" />
           </div>
           <div className="min-w-0">
-            <p className="font-semibold text-xs sm:text-sm text-white truncate">
+            <p className="font-semibold text-sm text-white truncate leading-tight">
               {activeChat?.title || 'CodeCortex Pro'}
             </p>
             <p className="text-[10px] text-gray-500 hidden sm:block">AI Embedded Vision Assistant</p>
@@ -115,28 +116,27 @@ export default function ChatPanel({
 
         <button
           onClick={onOpenSettings}
-          className="text-gray-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-card shrink-0"
+          className="shrink-0 p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-[#1e1e1e] transition-colors"
         >
           <Settings2 size={17} />
         </button>
       </div>
 
-      {/* ── Messages ───────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 sm:py-5 flex flex-col gap-4">
+      {/* ── Messages — flex-1 + overflow-y-auto is the scroll container ── */}
+      <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 flex flex-col gap-4 min-h-0">
         {messages.length === 0 && (
-          <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 animate-fade-in px-2">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-choco/10 border border-choco/20 flex items-center justify-center">
-              <Brain size={28} className="sm:hidden text-choco-light" />
-              <Brain size={36} className="hidden sm:block text-choco-light" />
+          <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 px-2 py-8">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#7B3F00]/10 border border-[#7B3F00]/20 flex items-center justify-center">
+              <Brain size={32} className="text-[#9B5A1A]" />
             </div>
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">CodeCortex Pro</h2>
-              <p className="text-gray-500 text-xs sm:text-sm max-w-md leading-relaxed">
+              <p className="text-gray-500 text-xs sm:text-sm max-w-sm leading-relaxed">
                 AI-powered embedded C/C++ code generation for computer vision tasks.
                 Select your device and camera, then describe what you need.
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 w-full max-w-md">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md">
               {[
                 'Initialize DCMI camera on STM32H7',
                 'Run TFLite object detection on ESP32-CAM',
@@ -146,7 +146,7 @@ export default function ChatPanel({
                 <button
                   key={s}
                   onClick={() => setPrompt(s)}
-                  className="text-left bg-card hover:bg-border border border-border hover:border-choco/30
+                  className="text-left bg-[#1e1e1e] hover:bg-[#2c2c2c] border border-[#2c2c2c] hover:border-[#7B3F00]/40
                              text-xs text-gray-400 hover:text-white px-3 py-2.5 rounded-xl transition-all"
                 >
                   {s}
@@ -159,25 +159,25 @@ export default function ChatPanel({
         {messages.map(msg => (
           <div
             key={msg.id}
-            className={`flex gap-2 sm:gap-3 animate-slide-up ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+            className={`flex gap-2 sm:gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
           >
-            <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full shrink-0 flex items-center justify-center text-xs font-bold
-              ${msg.role === 'user' ? 'bg-choco text-white' : 'bg-card border border-border text-choco-light'}`}>
+            <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs
+              ${msg.role === 'user' ? 'bg-[#7B3F00] text-white' : 'bg-[#1e1e1e] border border-[#2c2c2c] text-[#9B5A1A]'}`}>
               {msg.role === 'user' ? '👤' : '🤖'}
             </div>
 
-            <div className={`flex flex-col gap-2 max-w-[90%] sm:max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+            <div className={`flex flex-col gap-1.5 min-w-0 max-w-[88%] sm:max-w-[82%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
               <div className={msg.role === 'user' ? 'message-bubble-user' : 'message-bubble-ai'}>
                 {msg.content}
               </div>
 
               {msg.code && (
-                <div className="w-full rounded-xl overflow-hidden border border-border/30">
+                <div className="w-full rounded-xl overflow-hidden border border-[#2c2c2c]/50">
                   <div className="flex items-center justify-between bg-black/60 px-3 py-1.5 text-[10px] text-gray-500">
                     <span className="font-mono">Generated Firmware</span>
                     <button
                       onClick={() => navigator.clipboard.writeText(msg.code!)}
-                      className="hover:text-choco-light transition-colors"
+                      className="hover:text-[#9B5A1A] transition-colors"
                     >
                       Copy
                     </button>
@@ -185,7 +185,7 @@ export default function ChatPanel({
                   <SyntaxHighlighter
                     language="c"
                     style={vscDarkPlus}
-                    customStyle={{ margin: 0, borderRadius: 0, fontSize: '0.7rem', maxHeight: '300px' }}
+                    customStyle={{ margin: 0, borderRadius: 0, fontSize: '0.7rem', maxHeight: '280px' }}
                   >
                     {msg.code}
                   </SyntaxHighlighter>
@@ -193,32 +193,30 @@ export default function ChatPanel({
               )}
 
               {msg.metrics && (
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-1.5 flex-wrap">
                   {[
                     { label: 'Flash', value: `${msg.metrics.flash}KB` },
-                    { label: 'RAM', value: `${msg.metrics.ram}KB` },
+                    { label: 'RAM',   value: `${msg.metrics.ram}KB` },
                     { label: 'Speed', value: `${msg.metrics.latency}ms` },
-                    { label: 'Energy', value: `${msg.metrics.energy}mJ` },
+                    { label: 'Energy',value: `${msg.metrics.energy}mJ` },
                   ].map(m => (
-                    <span key={m.label} className="bg-border text-gray-300 text-[10px] px-2 py-0.5 rounded-full">
-                      {m.label}: <span className="text-choco-light font-semibold">{m.value}</span>
+                    <span key={m.label} className="bg-[#2c2c2c] text-gray-300 text-[10px] px-2 py-0.5 rounded-full">
+                      {m.label}: <span className="text-[#9B5A1A] font-semibold">{m.value}</span>
                     </span>
                   ))}
                 </div>
               )}
 
-              <span className="text-[10px] text-gray-600">
-                {formatTime(msg.timestamp)}
-              </span>
+              <span className="text-[10px] text-gray-600">{formatTime(msg.timestamp)}</span>
             </div>
           </div>
         ))}
 
         {generating && (
-          <div className="flex gap-3 animate-fade-in">
-            <div className="w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center text-xs">🤖</div>
+          <div className="flex gap-3">
+            <div className="w-7 h-7 rounded-full bg-[#1e1e1e] border border-[#2c2c2c] flex items-center justify-center text-xs">🤖</div>
             <div className="message-bubble-ai flex items-center gap-2">
-              <Loader2 size={14} className="animate-spin text-choco-light" />
+              <Loader2 size={14} className="animate-spin text-[#9B5A1A]" />
               <span className="text-gray-400 text-sm">Generating firmware…</span>
             </div>
           </div>
@@ -227,30 +225,31 @@ export default function ChatPanel({
         <div ref={bottomRef} />
       </div>
 
-      {/* ── Input area ─────────────────────────────────────────────────────── */}
-      <div className="px-3 sm:px-4 py-3 bg-[#121212] border-t border-border shrink-0">
-        {/* Device + Camera selects — stack on mobile, side-by-side on sm+ */}
+      {/* ── Input area ── */}
+      <div className="px-3 sm:px-4 py-3 bg-[#121212] border-t border-[#2c2c2c] shrink-0">
+
+        {/* Device + Camera — stacked on mobile, side by side on sm+ */}
         <div className="flex flex-col sm:flex-row gap-2 mb-2.5">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <label className="text-[10px] text-gray-500 mb-1 flex items-center gap-1">
               <Cpu size={10} /> Target Device
             </label>
             <select
               value={device}
               onChange={e => setDevice(e.target.value)}
-              className="input-dark text-xs py-1.5 w-full"
+              className="input-dark text-xs py-1.5"
             >
               {DEVICES.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <label className="text-[10px] text-gray-500 mb-1 flex items-center gap-1">
               <Camera size={10} /> Camera Module
             </label>
             <select
               value={camera}
               onChange={e => setCamera(e.target.value)}
-              className="input-dark text-xs py-1.5 w-full"
+              className="input-dark text-xs py-1.5"
             >
               {CAMERAS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
