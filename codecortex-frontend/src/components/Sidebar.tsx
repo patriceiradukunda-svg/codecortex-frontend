@@ -77,7 +77,7 @@ export default function Sidebar({ onOpenAuth, onOpenSettings }: SidebarProps) {
             <div className="flex-1 min-w-0">
               <p className="truncate font-medium text-xs">{chat.title}</p>
               <p className="text-[10px] text-gray-600 mt-0.5">
-                {formatTime(chat.updatedAt ?? chat.updated_at)}
+                {formatTime(chat.updatedAt)}
               </p>
             </div>
             <button
