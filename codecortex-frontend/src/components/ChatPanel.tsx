@@ -7,7 +7,6 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { formatDistanceToNow } from 'date-fns'
 
-// ── Props now include sidebar toggle ────────────────────────────────────────
 interface ChatPanelProps {
   onOpenAuth: (mode: 'login' | 'register') => void
   onOpenSettings: () => void
@@ -75,23 +74,21 @@ export default function ChatPanel({
     timestamp: (() => {
       try {
         if (!msg.timestamp) return null
-        if (typeof msg.timestamp === 'object' && (msg.timestamp as any).$date) {
+        if (typeof msg.timestamp === 'object' && (msg.timestamp as any).$date)
           return (msg.timestamp as any).$date
-        }
         return msg.timestamp
       } catch { return null }
     })()
   }))
 
   return (
-    // ── flex-1 + min-w-0 fills remaining space; flex-col stacks header/messages/input ──
     <div className="flex-1 flex flex-col bg-[#161616] min-w-0 h-full overflow-hidden">
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between px-3 py-3 bg-[#0e0e0e] border-b border-[#2c2c2c] shrink-0">
         <div className="flex items-center gap-2 min-w-0">
 
-          {/* Sidebar toggle button */}
+          {/* Sidebar toggle */}
           <button
             onClick={onToggleSidebar}
             title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
@@ -103,8 +100,8 @@ export default function ChatPanel({
             }
           </button>
 
-          <div className="w-8 h-8 rounded-full bg-[#7B3F00]/20 border border-[#7B3F00]/30 flex items-center justify-center shrink-0">
-            <Brain size={16} className="text-[#9B5A1A]" />
+          <div className="w-7 h-7 rounded-full bg-[#7B3F00]/20 border border-[#7B3F00]/30 flex items-center justify-center shrink-0">
+            <Brain size={14} className="text-[#9B5A1A]" />
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-sm text-white truncate leading-tight">
@@ -122,12 +119,12 @@ export default function ChatPanel({
         </button>
       </div>
 
-      {/* ── Messages — flex-1 + overflow-y-auto is the scroll container ── */}
+      {/* ── Messages ── */}
       <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 flex flex-col gap-4 min-h-0">
         {messages.length === 0 && (
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 px-2 py-8">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#7B3F00]/10 border border-[#7B3F00]/20 flex items-center justify-center">
-              <Brain size={32} className="text-[#9B5A1A]" />
+              <Brain size={30} className="text-[#9B5A1A]" />
             </div>
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">CodeCortex Pro</h2>
@@ -146,8 +143,9 @@ export default function ChatPanel({
                 <button
                   key={s}
                   onClick={() => setPrompt(s)}
-                  className="text-left bg-[#1e1e1e] hover:bg-[#2c2c2c] border border-[#2c2c2c] hover:border-[#7B3F00]/40
-                             text-xs text-gray-400 hover:text-white px-3 py-2.5 rounded-xl transition-all"
+                  className="text-left bg-[#1e1e1e] hover:bg-[#2c2c2c] border border-[#2c2c2c]
+                             hover:border-[#7B3F00]/40 text-xs text-gray-400 hover:text-white
+                             px-3 py-2.5 rounded-xl transition-all"
                 >
                   {s}
                 </button>
@@ -162,11 +160,15 @@ export default function ChatPanel({
             className={`flex gap-2 sm:gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
           >
             <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs
-              ${msg.role === 'user' ? 'bg-[#7B3F00] text-white' : 'bg-[#1e1e1e] border border-[#2c2c2c] text-[#9B5A1A]'}`}>
+              ${msg.role === 'user'
+                ? 'bg-[#7B3F00] text-white'
+                : 'bg-[#1e1e1e] border border-[#2c2c2c] text-[#9B5A1A]'}`}>
               {msg.role === 'user' ? '👤' : '🤖'}
             </div>
 
-            <div className={`flex flex-col gap-1.5 min-w-0 max-w-[88%] sm:max-w-[82%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+            <div className={`flex flex-col gap-1.5 min-w-0
+              max-w-[85%] sm:max-w-[78%]
+              ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
               <div className={msg.role === 'user' ? 'message-bubble-user' : 'message-bubble-ai'}>
                 {msg.content}
               </div>
@@ -185,7 +187,7 @@ export default function ChatPanel({
                   <SyntaxHighlighter
                     language="c"
                     style={vscDarkPlus}
-                    customStyle={{ margin: 0, borderRadius: 0, fontSize: '0.7rem', maxHeight: '280px' }}
+                    customStyle={{ margin: 0, borderRadius: 0, fontSize: '0.7rem', maxHeight: '260px' }}
                   >
                     {msg.code}
                   </SyntaxHighlighter>
@@ -195,10 +197,10 @@ export default function ChatPanel({
               {msg.metrics && (
                 <div className="flex gap-1.5 flex-wrap">
                   {[
-                    { label: 'Flash', value: `${msg.metrics.flash}KB` },
-                    { label: 'RAM',   value: `${msg.metrics.ram}KB` },
-                    { label: 'Speed', value: `${msg.metrics.latency}ms` },
-                    { label: 'Energy',value: `${msg.metrics.energy}mJ` },
+                    { label: 'Flash',  value: `${msg.metrics.flash}KB` },
+                    { label: 'RAM',    value: `${msg.metrics.ram}KB` },
+                    { label: 'Speed',  value: `${msg.metrics.latency}ms` },
+                    { label: 'Energy', value: `${msg.metrics.energy}mJ` },
                   ].map(m => (
                     <span key={m.label} className="bg-[#2c2c2c] text-gray-300 text-[10px] px-2 py-0.5 rounded-full">
                       {m.label}: <span className="text-[#9B5A1A] font-semibold">{m.value}</span>
@@ -228,8 +230,8 @@ export default function ChatPanel({
       {/* ── Input area ── */}
       <div className="px-3 sm:px-4 py-3 bg-[#121212] border-t border-[#2c2c2c] shrink-0">
 
-        {/* Device + Camera — stacked on mobile, side by side on sm+ */}
-        <div className="flex flex-col sm:flex-row gap-2 mb-2.5">
+        {/* Device + Camera selects */}
+        <div className="flex gap-2 mb-2.5">
           <div className="flex-1 min-w-0">
             <label className="text-[10px] text-gray-500 mb-1 flex items-center gap-1">
               <Cpu size={10} /> Target Device
@@ -269,7 +271,7 @@ export default function ChatPanel({
           <button
             onClick={handleSend}
             disabled={!prompt.trim() || generating}
-            className="btn-choco px-4 sm:px-5 h-[44px] flex items-center gap-2 text-sm shrink-0"
+            className="btn-choco px-4 h-[44px] flex items-center gap-2 text-sm shrink-0"
           >
             {generating
               ? <Loader2 size={16} className="animate-spin" />
