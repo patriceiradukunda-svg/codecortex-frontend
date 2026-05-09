@@ -10,6 +10,24 @@ interface SidebarProps {
   onOpenSettings: () => void
 }
 
+function formatTime(timestamp: any): string {
+  try {
+    if (!timestamp) return ''
+    if (typeof timestamp === 'object' && timestamp !== null) {
+      const val = timestamp.$date ?? timestamp.date ?? Object.values(timestamp)[0]
+      if (!val) return ''
+      const d = new Date(String(val))
+      if (isNaN(d.getTime())) return ''
+      return formatDistanceToNow(d, { addSuffix: true })
+    }
+    const d = new Date(timestamp)
+    if (isNaN(d.getTime())) return ''
+    return formatDistanceToNow(d, { addSuffix: true })
+  } catch {
+    return ''
+  }
+}
+
 export default function Sidebar({ onOpenAuth, onOpenSettings }: SidebarProps) {
   const { user, logout, isAdmin } = useAuth()
   const { chats, activeChat, loadChats, newChat, selectChat, deleteChat } = useChat()
@@ -59,7 +77,7 @@ export default function Sidebar({ onOpenAuth, onOpenSettings }: SidebarProps) {
             <div className="flex-1 min-w-0">
               <p className="truncate font-medium text-xs">{chat.title}</p>
               <p className="text-[10px] text-gray-600 mt-0.5">
-                {formatDistanceToNow(new Date(chat.updatedAt), { addSuffix: true })}
+                {formatTime(chat.updatedAt ?? chat.updated_at)}
               </p>
             </div>
             <button
