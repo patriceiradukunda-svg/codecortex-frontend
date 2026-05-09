@@ -11,6 +11,7 @@ interface ChatContextType {
   selectChat: (id: string) => Promise<void>
   newChat: () => Promise<void>
   deleteChat: (id: string) => Promise<void>
+  renameChat: (id: string, title: string) => Promise<void>
   sendMessage: (prompt: string, device: string, camera: string) => Promise<void>
   profileCode: (code: string, device: string) => Promise<ProfilingMetrics | null>
 }
@@ -42,9 +43,8 @@ function normalizeChat(chat: any): Chat {
   }
 }
 
-/** Returns true if a chat has no messages (i.e. it's an empty/new chat) */
 function isEmptyChat(chat: Chat): boolean {
-  return chat.messages.length === 0
+  return (chat.messages?.length ?? 0) === 0
 }
 
 export function ChatProvider({ children }: { children: ReactNode }) {
@@ -71,15 +71,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }
 
   const newChat = async () => {
-    // ── Fix #3: block if there's already an empty chat ──────────────────────
     const existingEmpty = chats.find(isEmptyChat)
     if (existingEmpty) {
-      // Just switch to it instead of creating a duplicate
       setActiveChat(existingEmpty)
       toast('You already have an empty chat', { icon: '💬' })
       return
     }
-    // ────────────────────────────────────────────────────────────────────────
     const { data } = await chatsApi.create()
     const normalized = normalizeChat(data)
     setChats(prev => [normalized, ...prev])
@@ -91,6 +88,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setChats(prev => prev.filter(c => c.id !== id))
     if (activeChat?.id === id) {
       setActiveChat(chats.find(c => c.id !== id) || null)
+    }
+  }
+
+  const renameChat = async (id: string, title: string) => {
+    const { data } = await chatsApi.rename(id, title)
+    const normalized = normalizeChat(data)
+    setChats(prev => prev.map(c => c.id === id ? normalized : c))
+    if (activeChat?.id === id) {
+      setActiveChat(prev => prev ? { ...prev, title } : prev)
     }
   }
 
@@ -155,7 +161,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   return (
     <ChatContext.Provider value={{
       chats, activeChat, generating,
-      loadChats, selectChat, newChat, deleteChat, sendMessage, profileCode,
+      loadChats, selectChat, newChat, deleteChat, renameChat,
+      sendMessage, profileCode,
     }}>
       {children}
     </ChatContext.Provider>
