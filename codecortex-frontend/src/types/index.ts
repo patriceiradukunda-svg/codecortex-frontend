@@ -1,5 +1,4 @@
 export type UserRole = 'user' | 'admin'
-
 export interface User {
   id: string
   email: string
@@ -8,13 +7,11 @@ export interface User {
   avatar?: string
   createdAt: string
 }
-
 export interface AuthTokens {
   accessToken: string
   refreshToken: string
   tokenType: string
 }
-
 export interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -23,7 +20,6 @@ export interface Message {
   metrics?: ProfilingMetrics
   timestamp: string
 }
-
 export interface Chat {
   id: string
   userId: string
@@ -36,7 +32,6 @@ export interface Chat {
   createdAt: string
   updatedAt: string
 }
-
 export interface ProfilingMetrics {
   flash: number        // KB
   ram: number          // KB
@@ -47,14 +42,12 @@ export interface ProfilingMetrics {
   cpuFreq?: number     // MHz
   notes?: string
 }
-
 export interface GenerateRequest {
   prompt: string
   device: string
   camera: string
   chatId?: string
 }
-
 export interface GenerateResponse {
   code: string
   explanation: string
@@ -62,12 +55,10 @@ export interface GenerateResponse {
   chatId: string
   messageId: string
 }
-
 export interface ProfileRequest {
   code: string
   device: string
 }
-
 export interface AdminStats {
   totalUsers: number
   totalChats: number
@@ -76,7 +67,6 @@ export interface AdminStats {
   popularDevices: { device: string; count: number }[]
   recentUsers: User[]
 }
-
 export interface PaginatedResponse<T> {
   items: T[]
   total: number
@@ -95,11 +85,41 @@ export const DEVICES = [
 ] as const
 
 export const CAMERAS = [
-  'OV2640', 'OV7670', 'OV5640',
-  'Pi Camera v2', 'Pi Camera Module 3',
-  'IMX219', 'IMX477',
-  'USB Webcam', 'ArduCam',
-  'OpenMV Cam', 'DCMI Generic',
+  // ── OmniVision ──────────────────────────────
+  'OV2640',
+  'OV7670',
+  'OV7725',
+  'OV5640',
+  'OV9650',
+  'OV3660',
+  // ── Sony / Raspberry Pi ─────────────────────
+  'IMX219',
+  'IMX477',
+  'IMX708',
+  'Pi Camera v2',
+  'Pi Camera Module 3',
+  'Pi Camera HQ',
+  // ── ArduCam ─────────────────────────────────
+  'ArduCam OV2640',
+  'ArduCam OV5647',
+  'ArduCam IMX219',
+  'ArduCam IMX477',
+  'ArduCam 64MP Hawkeye',
+  // ── OpenMV / DCMI ───────────────────────────
+  'OpenMV Cam H7',
+  'OpenMV Cam H7 Plus',
+  'OpenMV Cam RT1062',
+  'DCMI Generic',
+  // ── Himax / Seeed / misc ────────────────────
+  'HM01B0',
+  'HM0360',
+  'GC2145',
+  'MT9V034',
+  // ── USB / Generic ───────────────────────────
+  'USB Camera',
+  'USB Webcam (UVC)',
+  'USB Webcam 1080p',
+  'IP Camera (RTSP)',
 ] as const
 
 export type Device = typeof DEVICES[number]
