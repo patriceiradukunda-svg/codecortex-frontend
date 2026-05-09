@@ -12,30 +12,31 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#121212]">
-      {/* Sidebar — hidden when toggled, slides off-screen on mobile */}
+
+      {/* ── Sidebar — animates width 0 ↔ 280px via inline style ── */}
       <div
-        className={`
-          transition-all duration-300 ease-in-out shrink-0
-          ${sidebarOpen ? 'w-[280px]' : 'w-0'}
-          overflow-hidden
-        `}
+        style={{ width: sidebarOpen ? '280px' : '0px' }}
+        className="transition-[width] duration-300 ease-in-out shrink-0 overflow-hidden h-full"
       >
-        <Sidebar
-          onOpenAuth={mode => setAuthModal(mode)}
-          onOpenSettings={() => setSettingsOpen(true)}
-        />
+        {/* Inner div stays 280px so content doesn't squish during animation */}
+        <div className="w-[280px] h-full">
+          <Sidebar
+            onOpenAuth={mode => setAuthModal(mode)}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+        </div>
       </div>
 
-      {/* Main content — grows to fill available space */}
-      <div className="flex flex-1 min-w-0 h-full">
+      {/* ── Main area (chat + profiler) ── */}
+      <div className="flex flex-1 min-w-0 h-full overflow-hidden">
         <ChatPanel
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen(prev => !prev)}
           onOpenAuth={mode => setAuthModal(mode)}
           onOpenSettings={() => setSettingsOpen(true)}
         />
-        {/* Profiling panel — hidden on small screens */}
-        <div className="hidden lg:block shrink-0">
+        {/* ProfilingPanel hidden on screens smaller than lg (1024px) */}
+        <div className="hidden lg:flex h-full shrink-0">
           <ProfilingPanel />
         </div>
       </div>
