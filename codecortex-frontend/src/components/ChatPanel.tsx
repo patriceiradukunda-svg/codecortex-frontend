@@ -12,6 +12,27 @@ interface ChatPanelProps {
   onOpenSettings: () => void
 }
 
+// ── Global safe timestamp formatter ──────────────────────────────────────────
+function formatTime(timestamp: any): string {
+  try {
+    if (!timestamp) return ''
+    // Handle MongoDB {$date: "..."} object
+    if (typeof timestamp === 'object' && timestamp !== null) {
+      const val = timestamp.$date ?? timestamp.date ?? Object.values(timestamp)[0]
+      if (!val) return ''
+      const d = new Date(String(val))
+      if (isNaN(d.getTime())) return ''
+      return formatDistanceToNow(d, { addSuffix: true })
+    }
+    // Handle plain string or number
+    const d = new Date(timestamp)
+    if (isNaN(d.getTime())) return ''
+    return formatDistanceToNow(d, { addSuffix: true })
+  } catch {
+    return ''
+  }
+}
+
 export default function ChatPanel({ onOpenAuth, onOpenSettings }: ChatPanelProps) {
   const { activeChat, generating, sendMessage } = useChat()
   const { user } = useAuth()
@@ -44,21 +65,21 @@ export default function ChatPanel({ onOpenAuth, onOpenSettings }: ChatPanelProps
     e.target.style.height = Math.min(e.target.scrollHeight, 180) + 'px'
   }
 
-  const messages = activeChat?.messages ?? []
-
-  // ── Safe timestamp formatter ──────────────────────────────────────────────
-  const formatTime = (timestamp: any): string => {
-    try {
-      // Handle MongoDB {$date: "..."} format or plain ISO string
-      const ts = timestamp?.$date ?? timestamp
-      if (!ts) return ''
-      const date = new Date(ts)
-      if (isNaN(date.getTime())) return ''
-      return formatDistanceToNow(date, { addSuffix: true })
-    } catch {
-      return ''
-    }
-  }
+  // Safely normalize messages to avoid any bad timestamps crashing the render
+  const messages = (activeChat?.messages ?? []).map(msg => ({
+    ...msg,
+    timestamp: (() => {
+      try {
+        if (!msg.timestamp) return null
+        if (typeof msg.timestamp === 'object' && (msg.timestamp as any).$date) {
+          return (msg.timestamp as any).$date
+        }
+        return msg.timestamp
+      } catch {
+        return null
+      }
+    })()
+  }))
 
   return (
     <div className="flex-1 flex flex-col bg-[#161616] min-w-0">
@@ -188,7 +209,6 @@ export default function ChatPanel({ onOpenAuth, onOpenSettings }: ChatPanelProps
 
       {/* Input area */}
       <div className="px-4 py-3 bg-[#121212] border-t border-border shrink-0">
-        {/* Device/Camera selectors */}
         <div className="flex gap-2 mb-2.5">
           <div className="flex-1">
             <label className="text-[10px] text-gray-500 mb-1 flex items-center gap-1">
@@ -216,7 +236,6 @@ export default function ChatPanel({ onOpenAuth, onOpenSettings }: ChatPanelProps
           </div>
         </div>
 
-        {/* Text input + send */}
         <div className="flex gap-2 items-end">
           <textarea
             ref={textareaRef}
