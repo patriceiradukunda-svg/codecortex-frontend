@@ -46,6 +46,20 @@ export default function ChatPanel({ onOpenAuth, onOpenSettings }: ChatPanelProps
 
   const messages = activeChat?.messages ?? []
 
+  // ── Safe timestamp formatter ──────────────────────────────────────────────
+  const formatTime = (timestamp: any): string => {
+    try {
+      // Handle MongoDB {$date: "..."} format or plain ISO string
+      const ts = timestamp?.$date ?? timestamp
+      if (!ts) return ''
+      const date = new Date(ts)
+      if (isNaN(date.getTime())) return ''
+      return formatDistanceToNow(date, { addSuffix: true })
+    } catch {
+      return ''
+    }
+  }
+
   return (
     <div className="flex-1 flex flex-col bg-[#161616] min-w-0">
       {/* Header */}
@@ -153,7 +167,7 @@ export default function ChatPanel({ onOpenAuth, onOpenSettings }: ChatPanelProps
               )}
 
               <span className="text-[10px] text-gray-600">
-                {formatDistanceToNow(new Date(msg.timestamp), { addSuffix: true })}
+                {formatTime(msg.timestamp)}
               </span>
             </div>
           </div>
