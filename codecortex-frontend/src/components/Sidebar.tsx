@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Brain, Plus, MessageSquare, Trash2, Settings, Shield, LogOut, User as UserIcon } from 'lucide-react'
+import { Brain, Plus, MessageSquare, Trash2, Settings, Shield, LogOut, User as UserIcon, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useChat } from '@/contexts/ChatContext'
 import { formatDistanceToNow } from 'date-fns'
@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom'
 interface SidebarProps {
   onOpenAuth: (mode: 'login' | 'register') => void
   onOpenSettings: () => void
+  onClose?: () => void   // called on mobile to close the drawer
 }
 
 function formatTime(timestamp: any): string {
@@ -28,7 +29,7 @@ function formatTime(timestamp: any): string {
   }
 }
 
-export default function Sidebar({ onOpenAuth, onOpenSettings }: SidebarProps) {
+export default function Sidebar({ onOpenAuth, onOpenSettings, onClose }: SidebarProps) {
   const { user, logout, isAdmin } = useAuth()
   const { chats, activeChat, loadChats, newChat, selectChat, deleteChat } = useChat()
   const navigate = useNavigate()
@@ -37,14 +38,31 @@ export default function Sidebar({ onOpenAuth, onOpenSettings }: SidebarProps) {
     if (user) loadChats()
   }, [user])
 
+  const handleSelectChat = (id: string) => {
+    selectChat(id)
+    onClose?.()   // close drawer on mobile after selecting a chat
+  }
+
   return (
     <div className="w-[280px] bg-sidebar border-r border-border flex flex-col h-full">
+
       {/* Header */}
-      <div className="px-4 py-5 border-b border-border">
-        <h1 className="text-xl font-bold text-choco-light flex items-center gap-2">
-          <Brain size={22} /> CodeCortex Pro
-        </h1>
-        <p className="text-xs text-gray-500 mt-0.5">AI · Embedded Vision · Profiling</p>
+      <div className="px-4 py-4 border-b border-border flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-bold text-choco-light flex items-center gap-2">
+            <Brain size={20} /> CodeCortex Pro
+          </h1>
+          <p className="text-xs text-gray-500 mt-0.5">AI · Embedded Vision · Profiling</p>
+        </div>
+        {/* Close button — visible on mobile only */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="lg:hidden p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-card transition-colors"
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       {/* New chat */}
@@ -65,7 +83,7 @@ export default function Sidebar({ onOpenAuth, onOpenSettings }: SidebarProps) {
         {chats.map(chat => (
           <div
             key={chat.id}
-            onClick={() => selectChat(chat.id)}
+            onClick={() => handleSelectChat(chat.id)}
             className={`group flex items-start gap-2 px-3 py-2.5 rounded-xl cursor-pointer
               border-l-2 text-sm transition-all duration-150
               ${activeChat?.id === chat.id
