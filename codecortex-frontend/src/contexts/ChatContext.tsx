@@ -33,13 +33,18 @@ function normalizeTimestamp(ts: any): string {
 function normalizeChat(chat: any): Chat {
   return {
     ...chat,
-    created_at: normalizeTimestamp(chat.created_at),
-    updated_at: normalizeTimestamp(chat.updated_at),
+    createdAt: normalizeTimestamp(chat.createdAt ?? chat.created_at),
+    updatedAt: normalizeTimestamp(chat.updatedAt ?? chat.updated_at),
     messages: (chat.messages ?? []).map((msg: any) => ({
       ...msg,
       timestamp: normalizeTimestamp(msg.timestamp),
     })),
   }
+}
+
+/** Returns true if a chat has no messages (i.e. it's an empty/new chat) */
+function isEmptyChat(chat: Chat): boolean {
+  return chat.messages.length === 0
 }
 
 export function ChatProvider({ children }: { children: ReactNode }) {
@@ -66,6 +71,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }
 
   const newChat = async () => {
+    // ── Fix #3: block if there's already an empty chat ──────────────────────
+    const existingEmpty = chats.find(isEmptyChat)
+    if (existingEmpty) {
+      // Just switch to it instead of creating a duplicate
+      setActiveChat(existingEmpty)
+      toast('You already have an empty chat', { icon: '💬' })
+      return
+    }
+    // ────────────────────────────────────────────────────────────────────────
     const { data } = await chatsApi.create()
     const normalized = normalizeChat(data)
     setChats(prev => [normalized, ...prev])
