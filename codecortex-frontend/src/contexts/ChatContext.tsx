@@ -12,7 +12,7 @@ interface ChatContextType {
   newChat: () => Promise<void>
   deleteChat: (id: string) => Promise<void>
   renameChat: (id: string, title: string) => Promise<void>
-  sendMessage: (prompt: string, device: string, camera: string, language: string) => Promise<void>
+  sendMessage: (prompt: string, device: string, camera: string, language: string, style: string) => Promise<void>
   profileCode: (code: string, device: string) => Promise<ProfilingMetrics | null>
 }
 
@@ -105,6 +105,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     device: string,
     camera: string,
     language: string = 'C',
+    style: string = 'clean',
   ) => {
     if (!activeChat && !chats.length) await newChat()
     const chatId = activeChat?.id
@@ -119,7 +120,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setGenerating(true)
 
     try {
-      const { data } = await generateApi.generate({ prompt, device, camera, chatId, language })
+      const { data } = await generateApi.generate({
+        prompt, device, camera, chatId, language, style,
+      })
       const aiMsg: Message = {
         id: data.messageId,
         role: 'assistant',
