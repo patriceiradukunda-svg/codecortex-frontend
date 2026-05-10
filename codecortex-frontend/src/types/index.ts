@@ -53,7 +53,8 @@ export interface GenerateRequest {
   device: string
   camera: string
   chatId?: string
-  language?: string      // "C" | "C++" | "Python" — defaults to "C"
+  language?: string   // "C" | "C++" | "Python"
+  style?: string      // "clean" | "commented" | "guide"
 }
 
 export interface GenerateResponse {
@@ -97,44 +98,30 @@ export const DEVICES = [
 
 export const CAMERAS = [
   // ── OmniVision ──────────────────────────────
-  'OV2640',
-  'OV7670',
-  'OV7725',
-  'OV5640',
-  'OV9650',
-  'OV3660',
+  'OV2640', 'OV7670', 'OV7725', 'OV5640', 'OV9650', 'OV3660',
   // ── Sony / Raspberry Pi ─────────────────────
-  'IMX219',
-  'IMX477',
-  'IMX708',
-  'Pi Camera v2',
-  'Pi Camera Module 3',
-  'Pi Camera HQ',
+  'IMX219', 'IMX477', 'IMX708',
+  'Pi Camera v2', 'Pi Camera Module 3', 'Pi Camera HQ',
   // ── ArduCam ─────────────────────────────────
-  'ArduCam OV2640',
-  'ArduCam OV5647',
-  'ArduCam IMX219',
-  'ArduCam IMX477',
-  'ArduCam 64MP Hawkeye',
+  'ArduCam OV2640', 'ArduCam OV5647', 'ArduCam IMX219',
+  'ArduCam IMX477', 'ArduCam 64MP Hawkeye',
   // ── OpenMV / DCMI ───────────────────────────
-  'OpenMV Cam H7',
-  'OpenMV Cam H7 Plus',
-  'OpenMV Cam RT1062',
-  'DCMI Generic',
+  'OpenMV Cam H7', 'OpenMV Cam H7 Plus', 'OpenMV Cam RT1062', 'DCMI Generic',
   // ── Himax / Seeed / misc ────────────────────
-  'HM01B0',
-  'HM0360',
-  'GC2145',
-  'MT9V034',
+  'HM01B0', 'HM0360', 'GC2145', 'MT9V034',
   // ── USB / Generic ───────────────────────────
-  'USB Camera',
-  'USB Webcam (UVC)',
-  'USB Webcam 1080p',
-  'IP Camera (RTSP)',
+  'USB Camera', 'USB Webcam (UVC)', 'USB Webcam 1080p', 'IP Camera (RTSP)',
 ] as const
 
 export const LANGUAGES = ['C', 'C++', 'Python'] as const
 
+export const STYLES = [
+  { value: 'clean',     label: 'Clean',     desc: 'Minimal code, no comments' },
+  { value: 'commented', label: 'Commented', desc: 'Code with inline comments' },
+  { value: 'guide',     label: 'Guide',     desc: 'Code + step-by-step explanation' },
+] as const
+
 export type Device   = typeof DEVICES[number]
 export type Camera   = typeof CAMERAS[number]
 export type Language = typeof LANGUAGES[number]
+export type Style    = 'clean' | 'commented' | 'guide'
