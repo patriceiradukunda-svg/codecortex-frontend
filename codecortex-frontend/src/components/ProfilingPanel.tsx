@@ -4,7 +4,6 @@ import {
   Zap, Clock, GitBranch, ClipboardPaste, Loader2, BarChart3,
 } from 'lucide-react'
 import { useChat } from '@/contexts/ChatContext'
-import { ProfilingMetrics } from '@/types'
 import jsPDF from 'jspdf'
 
 interface MetricCardProps {
@@ -71,7 +70,7 @@ export default function ProfilingPanel() {
       `RAM   : ${m.ram} KB`,
       `Speed : ${m.latency} ms/frame`,
       `Energy: ${m.energy} mJ`,
-      `Complexity: ${m.complexity} — ${m.complexity_desc ?? m.complexityDesc ?? ''}`,
+      `Complexity: ${m.complexity} — ${m.complexityDesc ?? ''}`,
     ].forEach((line, i) => doc.text(line, 25, 79 + i * 8))
     if (code) {
       doc.line(20, 122, 190, 122)
@@ -156,7 +155,7 @@ export default function ProfilingPanel() {
                 {m.complexity}
               </span>
               <p className="text-[11px] text-[#6B7280] mt-2 leading-relaxed">
-                {m.complexity_desc ?? (m as any).complexityDesc}
+                {m.complexityDesc}
               </p>
               {m.notes && (
                 <p className="text-[11px] text-[#4B5563] mt-1.5 border-t border-[#2a2a2a] pt-1.5 leading-relaxed">
