@@ -3,54 +3,123 @@
 @tailwind utilities;
 
 @layer base {
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body, #root { height: 100vh; overflow: hidden; }
-  :root {
-    --choco: #7B3F00;
-    --choco-light: #9B5A1A;
-    --scrollbar-color: #2c2c2c;
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
   }
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--scrollbar-color); border-radius: 2px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--choco); }
+
+  body {
+    background: #121212;
+    color: #f0f0f0;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :root {
+    --brand:       #C06A1A;
+    --brand-light: #E07820;
+    --brand-dark:  #8A4A0A;
+    --brand-glow:  rgba(224, 120, 32, 0.15);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar          { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track    { background: transparent; }
+  ::-webkit-scrollbar-thumb    { background: #383838; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--brand); }
 }
 
 @layer components {
-  .btn-choco {
-    @apply bg-choco hover:bg-choco-light text-white font-semibold rounded-full
-           transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+
+  /* ── Buttons ── */
+  .btn-brand {
+    @apply bg-[#C06A1A] hover:bg-[#E07820] active:scale-95
+           text-white font-semibold rounded-xl
+           transition-all duration-200
+           disabled:opacity-40 disabled:cursor-not-allowed
+           shadow-lg shadow-[rgba(192,106,26,0.25)];
   }
-  .btn-outline {
-    @apply border border-border bg-transparent hover:bg-card text-gray-300
-           font-medium rounded-full transition-all duration-200;
+
+  .btn-ghost {
+    @apply border border-[#383838] hover:border-[#C06A1A]/40
+           bg-transparent hover:bg-[#1e1e1e]
+           text-[#6B7280] hover:text-white
+           font-medium rounded-xl
+           transition-all duration-200;
   }
-  .input-dark {
-    @apply w-full bg-border border-none rounded-2xl px-4 py-2.5
-           text-white text-sm outline-none focus:ring-1 focus:ring-choco
-           placeholder:text-gray-500 transition-all;
+
+  /* ── Inputs ── */
+  .input-field {
+    @apply w-full bg-[#1a1a1a] border border-[#383838]
+           rounded-xl px-4 py-2.5 text-sm text-white
+           placeholder:text-[#4B5563]
+           outline-none focus:border-[#C06A1A]/60 focus:ring-1 focus:ring-[#C06A1A]/20
+           transition-all duration-200;
   }
-  .card-dark {
-    @apply bg-card rounded-xl border border-border/50;
+
+  .select-field {
+    @apply w-full bg-[#1a1a1a] border border-[#383838]
+           rounded-xl px-3 py-1.5 text-xs text-white
+           outline-none focus:border-[#C06A1A]/60
+           transition-colors cursor-pointer;
   }
+
+  /* ── Cards ── */
+  .card {
+    @apply bg-[#1e1e1e] border border-[#383838] rounded-xl;
+  }
+
+  .card-hover {
+    @apply bg-[#1e1e1e] border border-[#383838] rounded-xl
+           hover:bg-[#252525] hover:border-[#C06A1A]/30
+           transition-all duration-150;
+  }
+
+  /* ── Message bubbles ── */
+  .bubble-user {
+    @apply bg-gradient-to-br from-[#E07820] to-[#C06A1A]
+           text-white rounded-2xl rounded-tr-sm
+           px-4 py-2.5 text-sm leading-relaxed
+           shadow-lg shadow-[rgba(192,106,26,0.2)];
+  }
+
+  .bubble-ai {
+    @apply bg-[#1e1e1e] border border-[#383838]
+           text-gray-200 rounded-2xl rounded-tl-sm
+           px-4 py-3 text-sm leading-relaxed;
+  }
+
+  /* ── Metric pills ── */
+  .metric-pill {
+    @apply flex items-center gap-1.5 px-2.5 py-1
+           rounded-full border text-[11px] font-medium;
+  }
+
+  /* ── Toggle button ── */
+  .toggle-btn {
+    @apply px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150;
+  }
+  .toggle-btn-active {
+    @apply bg-[#C06A1A]/15 border-[#C06A1A]/50 text-[#E07820];
+  }
+  .toggle-btn-inactive {
+    @apply bg-[#1a1a1a] border-[#383838] text-[#6B7280] hover:text-gray-300 hover:border-[#4a4a4a];
+  }
+
+  /* ── Sidebar item ── */
   .sidebar-item {
-    @apply flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer
-           text-gray-400 hover:text-white hover:bg-card transition-all duration-150 text-sm;
+    @apply flex items-start gap-2 px-3 py-2.5 rounded-xl cursor-pointer
+           border-l-2 transition-all duration-150;
   }
-  .sidebar-item.active {
-    @apply bg-card text-white border-l-2 border-choco;
-  }
-  .metric-card {
-    @apply bg-[#1f1f1f] rounded-2xl p-4 text-center flex flex-col items-center gap-1;
-  }
-  .code-block {
-    @apply bg-black/80 rounded-xl p-4 font-mono text-xs overflow-x-auto
-           border border-border/30 whitespace-pre-wrap leading-relaxed;
-  }
-  .message-bubble-user {
-    @apply bg-choco text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm max-w-[85%] self-end;
-  }
-  .message-bubble-ai {
-    @apply bg-card text-gray-200 rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm max-w-[85%] self-start;
+  .sidebar-item-active   { @apply bg-[#1e1e1e] border-[#E07820]; }
+  .sidebar-item-inactive { @apply border-transparent hover:bg-[#181818]; }
+
+  /* ── Code block header ── */
+  .code-header {
+    @apply flex items-center justify-between
+           px-4 py-2 bg-[#0a0a0a] border-b border-[#383838];
   }
 }
