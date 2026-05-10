@@ -12,6 +12,7 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { formatDistanceToNow } from 'date-fns'
 import ProfilingPanel from './ProfilingPanel'
 import LanguagePicker from './LanguagePicker'
+import OutputStylePicker from './OutputStylePicker'
 
 interface ChatPanelProps {
   onOpenAuth: (mode: 'login' | 'register') => void
@@ -21,6 +22,7 @@ interface ChatPanelProps {
 }
 
 type Language = 'C' | 'C++' | 'Python'
+type OutputStyle = 'clean' | 'commented' | 'guide'
 
 function formatTime(timestamp: any): string {
   try {
@@ -117,14 +119,16 @@ export default function ChatPanel({
 }: ChatPanelProps) {
   const { activeChat, generating, sendMessage } = useChat()
   const { user } = useAuth()
-  const [prompt, setPrompt]               = useState('')
-  const [device, setDevice]               = useState('STM32H7')
-  const [camera, setCamera]               = useState('OV2640')
-  const [showScrollBtn, setShowScrollBtn] = useState(false)
-  const [mobileTab, setMobileTab]         = useState<'chat' | 'profiler'>('chat')
-  const [showLangPicker, setShowLangPicker] = useState(false)
-  const [pendingPrompt, setPendingPrompt]   = useState('')
-  const [lastLang, setLastLang]             = useState<Language>('C')
+  const [prompt, setPrompt]                     = useState('')
+  const [device, setDevice]                     = useState('STM32H7')
+  const [camera, setCamera]                     = useState('OV2640')
+  const [showScrollBtn, setShowScrollBtn]       = useState(false)
+  const [mobileTab, setMobileTab]               = useState<'chat' | 'profiler'>('chat')
+  const [showLangPicker, setShowLangPicker]     = useState(false)
+  const [showStylePicker, setShowStylePicker]   = useState(false)
+  const [pendingPrompt, setPendingPrompt]       = useState('')
+  const [selectedLang, setSelectedLang]         = useState<Language>('C')
+  const [lastLang, setLastLang]                 = useState<Language>('C')
 
   const bottomRef   = useRef<HTMLDivElement>(null)
   const scrollRef   = useRef<HTMLDivElement>(null)
@@ -140,6 +144,7 @@ export default function ChatPanel({
 
   useEffect(() => { scrollToBottom() }, [activeChat?.messages])
 
+  // Step 1 — show language picker
   const handleSend = async () => {
     if (!prompt.trim() || generating) return
     if (!user) return onOpenAuth('login')
@@ -149,15 +154,31 @@ export default function ChatPanel({
     setShowLangPicker(true)
   }
 
-  const handleLanguageSelect = async (lang: Language) => {
+  // Step 2 — language chosen, show style picker
+  const handleLanguageSelect = (lang: Language) => {
     setShowLangPicker(false)
+    setSelectedLang(lang)
     setLastLang(lang)
-    await sendMessage(pendingPrompt, device, camera, lang)
+    setShowStylePicker(true)
+  }
+
+  // Step 3 — style chosen, send message
+  const handleStyleSelect = async (style: OutputStyle) => {
+    setShowStylePicker(false)
+    await sendMessage(pendingPrompt, device, camera, selectedLang, style)
     setPendingPrompt('')
   }
 
+  // Cancel at language step
   const handleLanguageCancel = () => {
     setShowLangPicker(false)
+    setPrompt(pendingPrompt)
+    setPendingPrompt('')
+  }
+
+  // Cancel at style step
+  const handleStyleCancel = () => {
+    setShowStylePicker(false)
     setPrompt(pendingPrompt)
     setPendingPrompt('')
   }
@@ -192,11 +213,17 @@ export default function ChatPanel({
   return (
     <div className="flex-1 flex flex-col bg-[#161616] min-w-0 h-full overflow-hidden">
 
-      {/* Language picker modal */}
+      {/* ── Modals ── */}
       {showLangPicker && (
         <LanguagePicker
           onSelect={handleLanguageSelect}
           onCancel={handleLanguageCancel}
+        />
+      )}
+      {showStylePicker && (
+        <OutputStylePicker
+          onSelect={handleStyleSelect}
+          onCancel={handleStyleCancel}
         />
       )}
 
