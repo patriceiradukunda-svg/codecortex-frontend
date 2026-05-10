@@ -119,16 +119,16 @@ export default function ChatPanel({
 }: ChatPanelProps) {
   const { activeChat, generating, sendMessage } = useChat()
   const { user } = useAuth()
-  const [prompt, setPrompt]                     = useState('')
-  const [device, setDevice]                     = useState('STM32H7')
-  const [camera, setCamera]                     = useState('OV2640')
-  const [showScrollBtn, setShowScrollBtn]       = useState(false)
-  const [mobileTab, setMobileTab]               = useState<'chat' | 'profiler'>('chat')
-  const [showLangPicker, setShowLangPicker]     = useState(false)
-  const [showStylePicker, setShowStylePicker]   = useState(false)
-  const [pendingPrompt, setPendingPrompt]       = useState('')
-  const [selectedLang, setSelectedLang]         = useState<Language>('C')
-  const [lastLang, setLastLang]                 = useState<Language>('C')
+  const [prompt, setPrompt]                   = useState('')
+  const [device, setDevice]                   = useState('STM32H7')
+  const [camera, setCamera]                   = useState('OV2640')
+  const [showScrollBtn, setShowScrollBtn]     = useState(false)
+  const [mobileTab, setMobileTab]             = useState<'chat' | 'profiler'>('chat')
+  const [showLangPicker, setShowLangPicker]   = useState(false)
+  const [showStylePicker, setShowStylePicker] = useState(false)
+  const [pendingPrompt, setPendingPrompt]     = useState('')
+  const [selectedLang, setSelectedLang]       = useState<Language>('C')
+  const [lastLang, setLastLang]               = useState<Language>('C')
 
   const bottomRef   = useRef<HTMLDivElement>(null)
   const scrollRef   = useRef<HTMLDivElement>(null)
@@ -141,7 +141,6 @@ export default function ChatPanel({
   }, [])
 
   const scrollToBottom = () => bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-
   useEffect(() => { scrollToBottom() }, [activeChat?.messages])
 
   // Step 1 — show language picker
@@ -162,21 +161,19 @@ export default function ChatPanel({
     setShowStylePicker(true)
   }
 
-  // Step 3 — style chosen, send message
+  // Step 3 — style chosen, send
   const handleStyleSelect = async (style: OutputStyle) => {
     setShowStylePicker(false)
     await sendMessage(pendingPrompt, device, camera, selectedLang, style)
     setPendingPrompt('')
   }
 
-  // Cancel at language step
   const handleLanguageCancel = () => {
     setShowLangPicker(false)
     setPrompt(pendingPrompt)
     setPendingPrompt('')
   }
 
-  // Cancel at style step
   const handleStyleCancel = () => {
     setShowStylePicker(false)
     setPrompt(pendingPrompt)
@@ -298,11 +295,12 @@ export default function ChatPanel({
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold text-white mb-1.5">CodeCortex Pro</h2>
                   <p className="text-gray-600 text-xs sm:text-sm max-w-sm leading-relaxed">
-                    AI-powered embedded C/C++ and Python code generation for computer vision.
+                    AI-powered embedded C / C++ / Python code generation for computer vision.
                     Pick a device, camera, and describe what you need.
                   </p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
+                {/* ── Suggestion grid — 1 col on tiny, 2 col on xs+ ── */}
+                <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 w-full max-w-lg">
                   {SUGGESTIONS.map(s => (
                     <button key={s.text} onClick={() => setPrompt(s.text)}
                       className="flex items-start gap-2.5 text-left bg-[#1a1a1a] hover:bg-[#222]
@@ -327,7 +325,6 @@ export default function ChatPanel({
                 <div key={msg.id}
                   className={`flex gap-2 sm:gap-3 group ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
 
-                  {/* Avatar */}
                   <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs font-bold self-start mt-0.5
                     ${isUser
                       ? 'bg-gradient-to-br from-[#9B5A1A] to-[#7B3F00] text-white'
@@ -470,12 +467,14 @@ export default function ChatPanel({
             </button>
           )}
 
-          {/* Input area */}
-          <div className="px-3 sm:px-4 pt-3 bg-[#111] border-t border-[#2c2c2c] shrink-0"
-            style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
-
-            <div className="flex gap-2 mb-2.5">
-              <div className="flex-1 min-w-0">
+          {/* ── Input area ── */}
+          <div
+            className="px-3 sm:px-4 pt-3 bg-[#111] border-t border-[#2c2c2c] shrink-0"
+            style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
+          >
+            {/* Device + Camera — wrap on tiny screens, side by side on xs+ */}
+            <div className="flex flex-wrap xs:flex-nowrap gap-2 mb-2.5">
+              <div className="flex-1 min-w-[140px]">
                 <label className="text-[10px] text-gray-600 mb-1 flex items-center gap-1">
                   <Cpu size={9} /> Target Device
                 </label>
@@ -485,7 +484,7 @@ export default function ChatPanel({
                   {DEVICES.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-[140px]">
                 <label className="text-[10px] text-gray-600 mb-1 flex items-center gap-1">
                   <Camera size={9} /> Camera Module
                 </label>
@@ -497,6 +496,7 @@ export default function ChatPanel({
               </div>
             </div>
 
+            {/* Textarea + send */}
             <div className="flex gap-2 items-end">
               <div className="flex-1 relative">
                 <textarea
