@@ -13,18 +13,19 @@ interface MetricCardProps {
   value: string | number
   unit: string
   color?: string
-  hasData: boolean
+  active: boolean
 }
 
-function MetricCard({ icon, label, value, unit, color = 'text-[#9B5A1A]', hasData }: MetricCardProps) {
+function MetricCard({ icon, label, value, unit, color = 'text-[#E07820]', active }: MetricCardProps) {
   return (
-    <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3 flex flex-col items-center text-center gap-1">
-      <div className={`${hasData ? color : 'text-gray-700'} transition-colors`}>{icon}</div>
-      <div className={`text-xl font-bold transition-colors ${hasData ? color : 'text-gray-700'}`}>
+    <div className={`bg-[#1a1a1a] border rounded-xl p-3 flex flex-col items-center text-center gap-1 transition-colors
+      ${active ? 'border-[#383838]' : 'border-[#2a2a2a]'}`}>
+      <div className={`transition-colors ${active ? color : 'text-[#383838]'}`}>{icon}</div>
+      <div className={`text-xl font-bold font-mono transition-colors ${active ? color : 'text-[#383838]'}`}>
         {value}
       </div>
-      <div className="text-[10px] text-gray-600">{unit}</div>
-      <div className="text-[10px] text-gray-500 leading-tight">{label}</div>
+      <div className="text-[10px] text-[#6B7280]">{unit}</div>
+      <div className="text-[10px] text-[#4B5563] leading-tight">{label}</div>
     </div>
   )
 }
@@ -33,11 +34,10 @@ export default function ProfilingPanel() {
   const { activeChat, profileCode, generating } = useChat()
   const [profiling, setProfiling] = useState(false)
 
-  const m: ProfilingMetrics | undefined = activeChat?.lastMetrics
+  const m    = activeChat?.lastMetrics
   const code = activeChat?.lastCode
-  const hasData = !!m
 
-  const handlePasteEval = async () => {
+  const handlePaste = async () => {
     const input = prompt('Paste your C/C++ code:')
     if (!input) return
     setProfiling(true)
@@ -45,72 +45,68 @@ export default function ProfilingPanel() {
     setProfiling(false)
   }
 
-  const downloadCode = () => {
+  const downloadC = () => {
     if (!code) return alert('Generate code first')
-    const blob = new Blob([code], { type: 'text/plain' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `firmware_${activeChat?.lastMcu || 'mcu'}.c`
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(new Blob([code], { type: 'text/plain' })),
+      download: `firmware_${activeChat?.lastMcu || 'mcu'}.c`,
+    })
     a.click()
   }
 
   const downloadPDF = () => {
-    if (!m) return alert('No profiling data available')
+    if (!m) return alert('No profiling data yet')
     const doc = new jsPDF()
-    doc.setFontSize(18)
-    doc.text('CodeCortex Pro — Profiling Report', 20, 20)
-    doc.setFontSize(11)
-    doc.text(`Session: ${activeChat?.title || 'Untitled'}`, 20, 35)
-    doc.text(`MCU: ${activeChat?.lastMcu || 'N/A'}  Camera: ${activeChat?.lastCamera || 'N/A'}`, 20, 43)
-    doc.text(`Date: ${new Date().toLocaleString()}`, 20, 51)
-    doc.line(20, 57, 190, 57)
-    doc.setFontSize(13); doc.text('Resource Profile', 20, 67)
-    doc.setFontSize(11)
-    doc.text(`Flash: ${m.flash} KB`, 25, 77)
-    doc.text(`RAM: ${m.ram} KB`, 25, 85)
-    doc.text(`Latency: ${m.latency} ms/frame`, 25, 93)
-    doc.text(`Energy: ${m.energy} mJ`, 25, 101)
-    doc.text(`Complexity: ${m.complexity}`, 25, 109)
-    doc.text(`Notes: ${m.complexityDesc}`, 25, 117)
+    doc.setFontSize(16); doc.text('CodeCortex Pro — Profiling Report', 20, 20)
+    doc.setFontSize(10)
+    doc.text(`Session : ${activeChat?.title || 'Untitled'}`, 20, 34)
+    doc.text(`MCU     : ${activeChat?.lastMcu || 'N/A'}`, 20, 41)
+    doc.text(`Camera  : ${activeChat?.lastCamera || 'N/A'}`, 20, 48)
+    doc.text(`Date    : ${new Date().toLocaleString()}`, 20, 55)
+    doc.line(20, 60, 190, 60)
+    doc.setFontSize(12); doc.text('Resource Profile', 20, 69)
+    doc.setFontSize(10)
+    ;[
+      `Flash : ${m.flash} KB`,
+      `RAM   : ${m.ram} KB`,
+      `Speed : ${m.latency} ms/frame`,
+      `Energy: ${m.energy} mJ`,
+      `Complexity: ${m.complexity} — ${m.complexity_desc ?? m.complexityDesc ?? ''}`,
+    ].forEach((line, i) => doc.text(line, 25, 79 + i * 8))
     if (code) {
-      doc.line(20, 125, 190, 125)
-      doc.setFontSize(13); doc.text('Generated Code (preview)', 20, 135)
-      doc.setFontSize(8)
-      doc.text(doc.splitTextToSize(code.slice(0, 1500), 170), 20, 143)
+      doc.line(20, 122, 190, 122)
+      doc.setFontSize(12); doc.text('Generated Code (preview)', 20, 131)
+      doc.setFontSize(7)
+      doc.text(doc.splitTextToSize(code.slice(0, 1500), 170), 20, 139)
     }
     doc.save(`profile_${activeChat?.id || 'report'}.pdf`)
   }
 
   const downloadJSON = () => {
-    const data = {
-      session: activeChat?.title,
-      mcu: activeChat?.lastMcu,
-      camera: activeChat?.lastCamera,
-      metrics: m,
-      messages: activeChat?.messages,
-    }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `chat_${activeChat?.id || 'session'}.json`
-    a.click()
+    const blob = new Blob([JSON.stringify({
+      session: activeChat?.title, mcu: activeChat?.lastMcu,
+      camera: activeChat?.lastCamera, metrics: m, messages: activeChat?.messages,
+    }, null, 2)], { type: 'application/json' })
+    Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob),
+      download: `chat_${activeChat?.id || 'session'}.json`,
+    }).click()
   }
 
   return (
-    // fix #5 — narrowed from 380px to 300px
-    <div className="w-full lg:w-[300px] bg-[#111] border-l border-[#2c2c2c] flex flex-col h-full overflow-hidden">
+    <div className="w-full lg:w-[288px] bg-[#111] border-l border-[#2a2a2a] flex flex-col h-full overflow-hidden">
 
       {/* Header */}
-      <div className="px-4 py-3 bg-[#0d0d0d] border-b border-[#2c2c2c] flex items-center gap-2 shrink-0">
-        <Activity size={16} className="text-[#9B5A1A]" />
-        <div>
+      <div className="px-4 py-3 bg-[#0d0d0d] border-b border-[#2a2a2a] flex items-center gap-2 shrink-0">
+        <Activity size={15} className="text-[#E07820] shrink-0" />
+        <div className="min-w-0">
           <h3 className="text-sm font-semibold text-white">Resource Profiler</h3>
-          <p className="text-[10px] text-gray-600">
+          <p className="text-[10px] text-[#6B7280] truncate">
             {generating ? (
-              <span className="flex items-center gap-1 text-[#9B5A1A]">
+              <span className="flex items-center gap-1 text-[#E07820]">
                 <Loader2 size={9} className="animate-spin" /> Generating…
               </span>
-            ) : hasData
+            ) : m
               ? `✅ ${activeChat?.lastMcu} · ${activeChat?.lastCamera}`
               : 'Send a message to profile'
             }
@@ -118,69 +114,66 @@ export default function ProfilingPanel() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-0">
 
-        {/* fix #1 — empty state when no data */}
-        {!hasData && (
-          <div className="flex flex-col items-center justify-center text-center px-6 py-10 gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a]
-                            flex items-center justify-center">
-              <BarChart3 size={24} className="text-gray-700" />
+        {/* Empty state */}
+        {!m && (
+          <div className="flex flex-col items-center justify-center text-center px-5 py-12 gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
+              <BarChart3 size={22} className="text-[#383838]" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">No data yet</p>
-              <p className="text-xs text-gray-700 mt-1 leading-relaxed">
-                Generate embedded code in the chat to see flash, RAM, speed and energy metrics here.
+              <p className="text-sm font-medium text-[#6B7280]">No profiling data yet</p>
+              <p className="text-xs text-[#4B5563] mt-1 leading-relaxed">
+                Generate code in the chat to see Flash, RAM, speed and energy metrics here.
               </p>
             </div>
-            <button
-              onClick={handlePasteEval}
-              disabled={profiling}
-              className="text-xs text-[#9B5A1A] border border-[#7B3F00]/30 hover:bg-[#7B3F00]/10
-                         px-4 py-2 rounded-xl transition-all disabled:opacity-50 flex items-center gap-1.5"
-            >
+            <button onClick={handlePaste} disabled={profiling}
+              className="text-xs text-[#C06A1A] border border-[#C06A1A]/30 hover:bg-[#C06A1A]/10
+                         px-4 py-2 rounded-xl transition-all disabled:opacity-50 flex items-center gap-1.5">
               {profiling ? <Loader2 size={12} className="animate-spin" /> : <ClipboardPaste size={12} />}
-              Or paste code to evaluate
+              Paste code to evaluate
             </button>
           </div>
         )}
 
         {/* Metric cards */}
-        {hasData && (
+        {m && (
           <>
             <div className="grid grid-cols-2 gap-2 p-3">
-              <MetricCard icon={<FileCode size={15} />}    label="Code Size (Flash)" value={m?.flash ?? '—'} unit="KB"         hasData={hasData} />
-              <MetricCard icon={<MemoryStick size={15} />} label="Memory (RAM)"       value={m?.ram ?? '—'}   unit="KB"         color="text-amber-400" hasData={hasData} />
-              <MetricCard icon={<Clock size={15} />}       label="Processing Speed"   value={m?.latency ?? '—'} unit="ms/frame" color="text-blue-400"  hasData={hasData} />
-              <MetricCard icon={<Zap size={15} />}         label="Energy per Frame"   value={m?.energy ?? '—'} unit="mJ"        color="text-green-400" hasData={hasData} />
+              <MetricCard icon={<FileCode size={14} />}    label="Code Size (Flash)" value={m.flash}   unit="KB"       active={!!m} />
+              <MetricCard icon={<MemoryStick size={14} />} label="Memory (RAM)"      value={m.ram}     unit="KB"       color="text-amber-400" active={!!m} />
+              <MetricCard icon={<Clock size={14} />}       label="Processing Speed"  value={m.latency} unit="ms/frame" color="text-blue-400"  active={!!m} />
+              <MetricCard icon={<Zap size={14} />}         label="Energy per Frame"  value={m.energy}  unit="mJ"       color="text-green-400" active={!!m} />
             </div>
 
-            {m && (
-              <div className="mx-3 mb-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <GitBranch size={13} className="text-purple-400" />
-                  <span className="text-xs font-semibold text-gray-300">Time Complexity</span>
-                </div>
-                <span className="bg-[#2a2a2a] px-2.5 py-0.5 rounded-full text-xs font-mono text-[#9B5A1A] font-bold">
-                  {m.complexity}
-                </span>
-                <p className="text-[11px] text-gray-600 mt-2 leading-relaxed">{m.complexityDesc}</p>
-                {m.notes && (
-                  <p className="text-[11px] text-gray-700 mt-1.5 leading-relaxed border-t border-[#2a2a2a] pt-1.5">
-                    {m.notes}
-                  </p>
-                )}
+            <div className="mx-3 mb-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <GitBranch size={12} className="text-purple-400" />
+                <span className="text-xs font-semibold text-gray-300">Time Complexity</span>
               </div>
-            )}
+              <span className="bg-[#252525] px-2.5 py-0.5 rounded-full text-xs font-mono text-[#E07820] font-bold">
+                {m.complexity}
+              </span>
+              <p className="text-[11px] text-[#6B7280] mt-2 leading-relaxed">
+                {m.complexity_desc ?? (m as any).complexityDesc}
+              </p>
+              {m.notes && (
+                <p className="text-[11px] text-[#4B5563] mt-1.5 border-t border-[#2a2a2a] pt-1.5 leading-relaxed">
+                  {m.notes}
+                </p>
+              )}
+            </div>
 
             {code && (
               <div className="mx-3 mb-3">
-                <p className="text-xs text-gray-600 mb-1.5 flex items-center gap-1">
-                  <FileCode size={11} /> Generated Code
+                <p className="text-[10px] text-[#6B7280] mb-1.5 flex items-center gap-1">
+                  <FileCode size={10} /> Generated Code
                 </p>
-                <div className="bg-black/60 border border-[#2a2a2a] rounded-xl p-3 font-mono text-[11px]
-                                text-gray-400 overflow-x-auto max-h-[160px] whitespace-pre-wrap leading-relaxed">
-                  {code.slice(0, 600)}{code.length > 600 ? '\n…' : ''}
+                <div className="bg-[#0d0d0d] border border-[#2a2a2a] rounded-xl p-3
+                                font-mono text-[11px] text-[#9CA3AF] overflow-x-auto
+                                max-h-[140px] whitespace-pre leading-relaxed">
+                  {code.slice(0, 500)}{code.length > 500 ? '\n…' : ''}
                 </div>
               </div>
             )}
@@ -188,30 +181,25 @@ export default function ProfilingPanel() {
         )}
       </div>
 
-      {/* Action buttons — always visible */}
-      <div className="p-3 border-t border-[#2c2c2c] space-y-2 shrink-0">
-        <button
-          onClick={handlePasteEval}
-          disabled={profiling}
-          className="w-full bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-[#2c2c2c] text-white text-xs
-                     py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-        >
+      {/* Action buttons */}
+      <div className="p-3 border-t border-[#2a2a2a] space-y-2 shrink-0">
+        <button onClick={handlePaste} disabled={profiling}
+          className="w-full bg-[#1a1a1a] hover:bg-[#252525] border border-[#383838] text-white
+                     text-xs py-2.5 rounded-xl flex items-center justify-center gap-2
+                     transition-all disabled:opacity-50">
           {profiling ? <Loader2 size={12} className="animate-spin" /> : <ClipboardPaste size={12} />}
           Paste & Evaluate Code
         </button>
         <div className="grid grid-cols-3 gap-1.5">
           {[
-            { label: '.c file', icon: <Download size={12} className="text-[#9B5A1A]" />, fn: downloadCode },
+            { label: '.c file', icon: <Download size={12} className="text-[#E07820]" />, fn: downloadC },
             { label: 'PDF',     icon: <Download size={12} className="text-red-400" />,   fn: downloadPDF },
             { label: 'JSON',    icon: <FileJson size={12} className="text-blue-400" />,  fn: downloadJSON },
           ].map(b => (
-            <button
-              key={b.label}
-              onClick={b.fn}
-              className="bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-[#2c2c2c] text-white
-                         text-[11px] py-2 rounded-xl flex flex-col items-center gap-1 transition-all"
-            >
-              {b.icon} {b.label}
+            <button key={b.label} onClick={b.fn}
+              className="bg-[#1a1a1a] hover:bg-[#252525] border border-[#383838] text-white
+                         text-[11px] py-2.5 rounded-xl flex flex-col items-center gap-1 transition-all">
+              {b.icon}{b.label}
             </button>
           ))}
         </div>
