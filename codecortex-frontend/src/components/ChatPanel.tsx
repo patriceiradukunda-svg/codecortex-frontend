@@ -298,7 +298,7 @@ export default function ChatPanel({
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold text-white mb-1.5">CodeCortex Pro</h2>
                   <p className="text-gray-600 text-xs sm:text-sm max-w-sm leading-relaxed">
-                    AI-powered embedded C/C++ & Python code generation for computer vision.
+                    AI-powered embedded C/C++ and Python code generation for computer vision.
                     Pick a device, camera, and describe what you need.
                   </p>
                 </div>
