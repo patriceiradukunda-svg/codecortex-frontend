@@ -11,6 +11,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { formatDistanceToNow } from 'date-fns'
 import ProfilingPanel from './ProfilingPanel'
+import LanguagePicker from './LanguagePicker'
 
 interface ChatPanelProps {
   onOpenAuth: (mode: 'login' | 'register') => void
@@ -18,6 +19,8 @@ interface ChatPanelProps {
   sidebarOpen: boolean
   onToggleSidebar: () => void
 }
+
+type Language = 'C' | 'C++' | 'Python'
 
 function formatTime(timestamp: any): string {
   try {
@@ -35,21 +38,14 @@ function formatTime(timestamp: any): string {
   } catch { return '' }
 }
 
-// ── Strip markdown and extract clean readable text ───────────────────────────
 function parseAIContent(raw: string): { clean: string; isGenerated: boolean } {
-  // Remove the inline resource profile line the backend appends
   const withoutProfile = raw
     .replace(/📊\s*\*\*Resource Profile:\*\*[^\n]*/g, '')
     .replace(/Resource Profile:[^\n]*/g, '')
-    // Convert **bold** → plain
     .replace(/\*\*(.*?)\*\*/g, '$1')
-    // Remove markdown headers
     .replace(/^#{1,6}\s+/gm, '')
-    // Remove triple backtick fences (the code goes into the code block separately)
     .replace(/```[\w]*\n?/g, '')
-    // Remove lone ``` 
     .replace(/```/g, '')
-    // Collapse 3+ newlines into 2
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 
@@ -57,9 +53,7 @@ function parseAIContent(raw: string): { clean: string; isGenerated: boolean } {
   return { clean: withoutProfile, isGenerated }
 }
 
-// ── Render plain text with basic inline formatting ───────────────────────────
 function MessageText({ text }: { text: string }) {
-  // Split into paragraphs
   const paragraphs = text.split('\n\n').filter(Boolean)
   return (
     <div className="space-y-2">
@@ -81,10 +75,10 @@ function MessageText({ text }: { text: string }) {
 }
 
 const SUGGESTIONS = [
-  { icon: <Cpu size={14} className="text-[#9B5A1A]" />,      text: 'Initialize DCMI camera on STM32H7' },
-  { icon: <Eye size={14} className="text-blue-400" />,        text: 'Run TFLite object detection on ESP32-CAM' },
-  { icon: <Camera size={14} className="text-green-400" />,    text: 'Capture and process frames on Raspberry Pi' },
-  { icon: <Zap size={14} className="text-purple-400" />,      text: 'Sobel edge detection for embedded CV' },
+  { icon: <Cpu size={14} className="text-[#9B5A1A]" />,   text: 'Initialize DCMI camera on STM32H7' },
+  { icon: <Eye size={14} className="text-blue-400" />,     text: 'Run TFLite object detection on ESP32-CAM' },
+  { icon: <Camera size={14} className="text-green-400" />, text: 'Capture and process frames on Raspberry Pi' },
+  { icon: <Zap size={14} className="text-purple-400" />,   text: 'Sobel edge detection for embedded CV' },
 ]
 
 const MAX_CHARS = 2000
@@ -110,18 +104,30 @@ function CopyButton({ text, size = 13 }: { text: string; size?: number }) {
   )
 }
 
+function getLangLabel(lang: Language): { file: string; syntax: string; label: string } {
+  switch (lang) {
+    case 'C++':    return { file: 'firmware.cpp', syntax: 'cpp',    label: 'C++' }
+    case 'Python': return { file: 'firmware.py',  syntax: 'python', label: 'Python' }
+    default:       return { file: 'firmware.c',   syntax: 'c',      label: 'C' }
+  }
+}
+
 export default function ChatPanel({
   onOpenAuth, onOpenSettings, sidebarOpen, onToggleSidebar,
 }: ChatPanelProps) {
   const { activeChat, generating, sendMessage } = useChat()
   const { user } = useAuth()
-  const [prompt, setPrompt] = useState('')
-  const [device, setDevice] = useState('STM32H7')
-  const [camera, setCamera] = useState('OV2640')
+  const [prompt, setPrompt]               = useState('')
+  const [device, setDevice]               = useState('STM32H7')
+  const [camera, setCamera]               = useState('OV2640')
   const [showScrollBtn, setShowScrollBtn] = useState(false)
-  const [mobileTab, setMobileTab] = useState<'chat' | 'profiler'>('chat')
-  const bottomRef  = useRef<HTMLDivElement>(null)
-  const scrollRef  = useRef<HTMLDivElement>(null)
+  const [mobileTab, setMobileTab]         = useState<'chat' | 'profiler'>('chat')
+  const [showLangPicker, setShowLangPicker] = useState(false)
+  const [pendingPrompt, setPendingPrompt]   = useState('')
+  const [lastLang, setLastLang]             = useState<Language>('C')
+
+  const bottomRef   = useRef<HTMLDivElement>(null)
+  const scrollRef   = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const handleScroll = useCallback(() => {
@@ -137,10 +143,23 @@ export default function ChatPanel({
   const handleSend = async () => {
     if (!prompt.trim() || generating) return
     if (!user) return onOpenAuth('login')
-    const p = prompt
+    setPendingPrompt(prompt)
     setPrompt('')
     if (textareaRef.current) textareaRef.current.style.height = '44px'
-    await sendMessage(p, device, camera)
+    setShowLangPicker(true)
+  }
+
+  const handleLanguageSelect = async (lang: Language) => {
+    setShowLangPicker(false)
+    setLastLang(lang)
+    await sendMessage(pendingPrompt, device, camera, lang)
+    setPendingPrompt('')
+  }
+
+  const handleLanguageCancel = () => {
+    setShowLangPicker(false)
+    setPrompt(pendingPrompt)
+    setPendingPrompt('')
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -166,11 +185,20 @@ export default function ChatPanel({
     })()
   }))
 
-  const charsLeft   = MAX_CHARS - prompt.length
-  const charsWarn   = charsLeft < 200
+  const charsLeft = MAX_CHARS - prompt.length
+  const charsWarn = charsLeft < 200
+  const langMeta  = getLangLabel(lastLang)
 
   return (
     <div className="flex-1 flex flex-col bg-[#161616] min-w-0 h-full overflow-hidden">
+
+      {/* Language picker modal */}
+      {showLangPicker && (
+        <LanguagePicker
+          onSelect={handleLanguageSelect}
+          onCancel={handleLanguageCancel}
+        />
+      )}
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between px-3 py-2.5 bg-[#0e0e0e] border-b border-[#2c2c2c] shrink-0">
@@ -209,7 +237,10 @@ export default function ChatPanel({
         {(['chat', 'profiler'] as const).map(tab => (
           <button key={tab} onClick={() => setMobileTab(tab)}
             className={`flex-1 py-2 text-xs font-medium capitalize transition-colors
-              ${mobileTab === tab ? 'text-[#9B5A1A] border-b-2 border-[#9B5A1A]' : 'text-gray-600 hover:text-gray-400'}`}>
+              ${mobileTab === tab
+                ? 'text-[#9B5A1A] border-b-2 border-[#9B5A1A]'
+                : 'text-gray-600 hover:text-gray-400'
+              }`}>
             {tab === 'chat' ? '💬 Chat' : '📊 Profiler'}
           </button>
         ))}
@@ -280,7 +311,7 @@ export default function ChatPanel({
 
                   <div className={`flex flex-col gap-2 min-w-0 max-w-[84%] ${isUser ? 'items-end' : 'items-start'}`}>
 
-                    {/* ── User bubble ── */}
+                    {/* User bubble */}
                     {isUser && (
                       <div className="relative group/bubble">
                         <div className="bg-gradient-to-br from-[#9B5A1A] to-[#7B3F00] text-white
@@ -293,11 +324,10 @@ export default function ChatPanel({
                       </div>
                     )}
 
-                    {/* ── AI bubble ── */}
+                    {/* AI bubble */}
                     {!isUser && (
                       <div className="w-full space-y-2">
 
-                        {/* Success header pill */}
                         {isGenerated && (
                           <div className="flex items-center gap-1.5 text-xs text-green-400">
                             <CheckCircle2 size={13} />
@@ -305,7 +335,6 @@ export default function ChatPanel({
                           </div>
                         )}
 
-                        {/* Main content bubble */}
                         <div className="relative group/bubble bg-[#1e1e1e] border border-[#2e2e2e]
                                         rounded-2xl rounded-tl-sm px-4 py-3 text-gray-200">
                           <MessageText text={clean} />
@@ -314,15 +343,15 @@ export default function ChatPanel({
                           </div>
                         </div>
 
-                        {/* ── Metrics pills — extracted from text, shown as badges ── */}
+                        {/* Metrics pills */}
                         {msg.metrics && (
                           <div className="flex flex-wrap gap-1.5">
                             {[
-                              { label: 'Flash',    value: `${msg.metrics.flash} KB`,      color: 'text-[#9B5A1A]',  bg: 'bg-[#7B3F00]/10 border-[#7B3F00]/20' },
-                              { label: 'RAM',      value: `${msg.metrics.ram} KB`,        color: 'text-amber-400',  bg: 'bg-amber-400/10 border-amber-400/20' },
-                              { label: 'Speed',    value: `${msg.metrics.latency} ms/f`,  color: 'text-blue-400',   bg: 'bg-blue-400/10  border-blue-400/20' },
-                              { label: 'Energy',   value: `${msg.metrics.energy} mJ`,     color: 'text-green-400',  bg: 'bg-green-400/10 border-green-400/20' },
-                              { label: 'Complexity', value: msg.metrics.complexity,       color: 'text-purple-400', bg: 'bg-purple-400/10 border-purple-400/20' },
+                              { label: 'Flash',      value: `${msg.metrics.flash} KB`,     color: 'text-[#9B5A1A]',  bg: 'bg-[#7B3F00]/10 border-[#7B3F00]/20' },
+                              { label: 'RAM',        value: `${msg.metrics.ram} KB`,       color: 'text-amber-400',  bg: 'bg-amber-400/10 border-amber-400/20' },
+                              { label: 'Speed',      value: `${msg.metrics.latency} ms/f`, color: 'text-blue-400',   bg: 'bg-blue-400/10  border-blue-400/20' },
+                              { label: 'Energy',     value: `${msg.metrics.energy} mJ`,    color: 'text-green-400',  bg: 'bg-green-400/10 border-green-400/20' },
+                              { label: 'Complexity', value: msg.metrics.complexity,        color: 'text-purple-400', bg: 'bg-purple-400/10 border-purple-400/20' },
                             ].map(m => (
                               <div key={m.label}
                                 className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-[11px] ${m.bg}`}>
@@ -333,24 +362,22 @@ export default function ChatPanel({
                           </div>
                         )}
 
-                        {/* ── Code block ── */}
+                        {/* Code block */}
                         {msg.code && (
                           <div className="w-full rounded-xl overflow-hidden border border-[#2c2c2c]/60 bg-[#0d0d0d]">
-                            {/* Code header */}
                             <div className="flex items-center justify-between px-4 py-2 bg-[#0a0a0a] border-b border-[#2c2c2c]">
                               <div className="flex items-center gap-2">
-                                {/* Traffic light dots */}
                                 <div className="flex gap-1.5">
                                   <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
                                   <div className="w-2.5 h-2.5 rounded-full bg-amber-500/60" />
                                   <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
                                 </div>
                                 <span className="text-[10px] text-[#9B5A1A] font-mono font-medium">
-                                  firmware.c
+                                  {langMeta.file}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-gray-700 font-mono">C/C++</span>
+                                <span className="text-[10px] text-gray-700 font-mono">{langMeta.label}</span>
                                 <button
                                   onClick={() => navigator.clipboard.writeText(msg.code!)}
                                   className="flex items-center gap-1 text-[10px] text-gray-500
@@ -362,7 +389,7 @@ export default function ChatPanel({
                               </div>
                             </div>
                             <SyntaxHighlighter
-                              language="c"
+                              language={langMeta.syntax}
                               style={vscDarkPlus}
                               showLineNumbers
                               customStyle={{
@@ -406,7 +433,7 @@ export default function ChatPanel({
             <div ref={bottomRef} />
           </div>
 
-          {/* Scroll to bottom button */}
+          {/* Scroll to bottom */}
           {showScrollBtn && (
             <button onClick={scrollToBottom}
               className="absolute bottom-[140px] right-5 z-10 w-8 h-8 rounded-full
@@ -416,11 +443,10 @@ export default function ChatPanel({
             </button>
           )}
 
-          {/* ── Input area ── */}
+          {/* Input area */}
           <div className="px-3 sm:px-4 pt-3 bg-[#111] border-t border-[#2c2c2c] shrink-0"
             style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
 
-            {/* Device + Camera selects */}
             <div className="flex gap-2 mb-2.5">
               <div className="flex-1 min-w-0">
                 <label className="text-[10px] text-gray-600 mb-1 flex items-center gap-1">
@@ -444,7 +470,6 @@ export default function ChatPanel({
               </div>
             </div>
 
-            {/* Textarea + send */}
             <div className="flex gap-2 items-end">
               <div className="flex-1 relative">
                 <textarea
