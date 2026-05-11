@@ -29,12 +29,30 @@ function MetricCard({ icon, label, value, unit, color = 'text-[#E07820]', active
   )
 }
 
+/** Detect language from code content and return the correct file extension + label */
+function detectCodeLang(code: string | undefined): { ext: string; label: string } {
+  if (!code) return { ext: 'c', label: '.c file' }
+  if (code.includes('def ') || code.startsWith('import ') || code.startsWith('#!'))
+    return { ext: 'py', label: '.py file' }
+  if (
+    code.includes('::') ||
+    code.includes('std::') ||
+    code.includes('cout') ||
+    code.includes('iostream')
+  )
+    return { ext: 'cpp', label: '.cpp file' }
+  return { ext: 'c', label: '.c file' }
+}
+
 export default function ProfilingPanel() {
   const { activeChat, profileCode, generating } = useChat()
   const [profiling, setProfiling] = useState(false)
 
   const m    = activeChat?.lastMetrics
   const code = activeChat?.lastCode
+
+  // ── Detect language from last generated code ──────────────────────────────
+  const codeLang = detectCodeLang(code)
 
   const handlePaste = async () => {
     const input = prompt('Paste your C/C++ code:')
@@ -44,11 +62,12 @@ export default function ProfilingPanel() {
     setProfiling(false)
   }
 
-  const downloadC = () => {
+  // ── Download code with correct extension ──────────────────────────────────
+  const downloadCode = () => {
     if (!code) return alert('Generate code first')
     const a = Object.assign(document.createElement('a'), {
       href: URL.createObjectURL(new Blob([code], { type: 'text/plain' })),
-      download: `firmware_${activeChat?.lastMcu || 'mcu'}.c`,
+      download: `firmware_${activeChat?.lastMcu || 'mcu'}.${codeLang.ext}`,
     })
     a.click()
   }
@@ -191,9 +210,9 @@ export default function ProfilingPanel() {
         </button>
         <div className="grid grid-cols-3 gap-1.5">
           {[
-            { label: '.c file', icon: <Download size={12} className="text-[#E07820]" />, fn: downloadC },
-            { label: 'PDF',     icon: <Download size={12} className="text-red-400" />,   fn: downloadPDF },
-            { label: 'JSON',    icon: <FileJson size={12} className="text-blue-400" />,  fn: downloadJSON },
+            { label: codeLang.label, icon: <Download size={12} className="text-[#E07820]" />, fn: downloadCode },
+            { label: 'PDF',          icon: <Download size={12} className="text-red-400" />,   fn: downloadPDF  },
+            { label: 'JSON',         icon: <FileJson size={12} className="text-blue-400" />,  fn: downloadJSON },
           ].map(b => (
             <button key={b.label} onClick={b.fn}
               className="bg-[#1a1a1a] hover:bg-[#252525] border border-[#383838] text-white
