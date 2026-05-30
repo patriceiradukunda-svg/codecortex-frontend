@@ -4,36 +4,31 @@
 
 @layer base {
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   html, body, #root {
     height: 100%;
     width: 100%;
     overflow: hidden;
   }
-
   body {
-    background: #121212;
-    color: #f0f0f0;
+    background: #ffffff;
+    color: #1a1a1a;
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-
   :root {
     --brand:       #C06A1A;
     --brand-light: #E07820;
     --brand-dark:  #8A4A0A;
     --brand-glow:  rgba(224, 120, 32, 0.15);
   }
-
   /* Scrollbar */
   ::-webkit-scrollbar          { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track    { background: transparent; }
-  ::-webkit-scrollbar-thumb    { background: #383838; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb    { background: #d1d5db; border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--brand); }
 }
 
 @layer components {
-
   /* ── Buttons ── */
   .btn-brand {
     @apply bg-[#C06A1A] hover:bg-[#E07820] active:scale-95
@@ -42,39 +37,36 @@
            disabled:opacity-40 disabled:cursor-not-allowed
            shadow-lg shadow-[rgba(192,106,26,0.25)];
   }
-
   .btn-ghost {
-    @apply border border-[#383838] hover:border-[#C06A1A]/40
-           bg-transparent hover:bg-[#1e1e1e]
-           text-[#6B7280] hover:text-white
+    @apply border border-gray-200 hover:border-[#C06A1A]/40
+           bg-transparent hover:bg-gray-50
+           text-gray-500 hover:text-gray-800
            font-medium rounded-xl
            transition-all duration-200;
   }
 
   /* ── Inputs ── */
   .input-field {
-    @apply w-full bg-[#1a1a1a] border border-[#383838]
-           rounded-xl px-4 py-2.5 text-sm text-white
-           placeholder:text-[#4B5563]
+    @apply w-full bg-white border border-gray-200
+           rounded-xl px-4 py-2.5 text-sm text-gray-800
+           placeholder:text-gray-400
            outline-none focus:border-[#C06A1A]/60 focus:ring-1 focus:ring-[#C06A1A]/20
            transition-all duration-200;
   }
-
   .select-field {
-    @apply w-full bg-[#1a1a1a] border border-[#383838]
-           rounded-xl px-3 py-1.5 text-xs text-white
+    @apply w-full bg-white border border-gray-200
+           rounded-xl px-3 py-1.5 text-xs text-gray-700
            outline-none focus:border-[#C06A1A]/60
            transition-colors cursor-pointer;
   }
 
   /* ── Cards ── */
   .card {
-    @apply bg-[#1e1e1e] border border-[#383838] rounded-xl;
+    @apply bg-white border border-gray-200 rounded-xl;
   }
-
   .card-hover {
-    @apply bg-[#1e1e1e] border border-[#383838] rounded-xl
-           hover:bg-[#252525] hover:border-[#C06A1A]/30
+    @apply bg-white border border-gray-200 rounded-xl
+           hover:bg-gray-50 hover:border-[#C06A1A]/30
            transition-all duration-150;
   }
 
@@ -85,11 +77,10 @@
            px-4 py-2.5 text-sm leading-relaxed
            shadow-lg shadow-[rgba(192,106,26,0.2)];
   }
-
   .bubble-ai {
-    @apply bg-[#1e1e1e] border border-[#383838]
-           text-gray-200 rounded-2xl rounded-tl-sm
-           px-4 py-3 text-sm leading-relaxed;
+    @apply bg-white border border-gray-200
+           text-gray-700 rounded-2xl rounded-tl-sm
+           px-4 py-3 text-sm leading-relaxed shadow-sm;
   }
 
   /* ── Metric pills ── */
@@ -103,10 +94,11 @@
     @apply px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150;
   }
   .toggle-btn-active {
-    @apply bg-[#C06A1A]/15 border-[#C06A1A]/50 text-[#E07820];
+    @apply bg-[#C06A1A]/10 border-[#C06A1A]/40 text-[#E07820];
   }
   .toggle-btn-inactive {
-    @apply bg-[#1a1a1a] border-[#383838] text-[#6B7280] hover:text-gray-300 hover:border-[#4a4a4a];
+    @apply bg-white border-gray-200 text-gray-500
+           hover:text-gray-700 hover:border-gray-300;
   }
 
   /* ── Sidebar item ── */
@@ -114,12 +106,12 @@
     @apply flex items-start gap-2 px-3 py-2.5 rounded-xl cursor-pointer
            border-l-2 transition-all duration-150;
   }
-  .sidebar-item-active   { @apply bg-[#1e1e1e] border-[#E07820]; }
-  .sidebar-item-inactive { @apply border-transparent hover:bg-[#181818]; }
+  .sidebar-item-active   { @apply bg-orange-50 border-[#E07820]; }
+  .sidebar-item-inactive { @apply border-transparent hover:bg-gray-50; }
 
   /* ── Code block header ── */
   .code-header {
     @apply flex items-center justify-between
-           px-4 py-2 bg-[#0a0a0a] border-b border-[#383838];
+           px-4 py-2 bg-[#2d2d2d] border-b border-gray-700;
   }
 }
