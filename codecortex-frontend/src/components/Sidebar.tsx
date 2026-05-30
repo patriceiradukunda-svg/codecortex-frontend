@@ -71,76 +71,138 @@ export default function Sidebar({ onOpenAuth, onOpenSettings, onClose }: Sidebar
   )
 
   return (
-    <div className="w-[272px] h-full bg-[#0f0f0f] border-r border-[#2a2a2a] flex flex-col">
+    <div className="w-[272px] h-full flex flex-col"
+      style={{ background: 'linear-gradient(180deg, #fafafa 0%, #f5f5f5 100%)',
+               borderRight: '1px solid #e8e8e8' }}>
 
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-[#2a2a2a] shrink-0">
-        <div>
-          <h1 className="text-sm font-bold text-[#E07820] flex items-center gap-2">
-            <Brain size={17} /> CodeCortex Pro
-          </h1>
-          <p className="text-[10px] text-[#6B7280] mt-0.5">AI · Embedded Vision · Profiling</p>
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between px-4 py-4 shrink-0"
+        style={{ borderBottom: '1px solid #eeeeee' }}>
+        <div className="flex items-center gap-2.5">
+          {/* Logo */}
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full blur-md"
+              style={{ background: 'rgba(192,106,26,0.2)' }} />
+            <div className="relative w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #E07820 0%, #C06A1A 100%)',
+                       boxShadow: '0 2px 8px rgba(192,106,26,0.35)' }}>
+              <Brain size={15} className="text-white" />
+            </div>
+          </div>
+          <div>
+            <h1 className="text-sm font-bold"
+              style={{ color: '#C06A1A' }}>
+              CodeCortex Pro
+            </h1>
+            <p className="text-[10px]" style={{ color: '#9CA3AF' }}>
+              AI · Embedded Vision · Profiling
+            </p>
+          </div>
         </div>
         {onClose && (
           <button onClick={onClose}
-            className="lg:hidden p-1.5 rounded-lg text-[#6B7280] hover:text-white hover:bg-[#1e1e1e] transition-colors">
+            className="lg:hidden p-1.5 rounded-lg transition-colors"
+            style={{ color: '#9CA3AF' }}
+            onMouseEnter={e => {
+              (e.target as HTMLElement).closest('button')!.style.background = '#f0f0f0'
+              ;(e.target as HTMLElement).closest('button')!.style.color = '#374151'
+            }}
+            onMouseLeave={e => {
+              (e.target as HTMLElement).closest('button')!.style.background = 'transparent'
+              ;(e.target as HTMLElement).closest('button')!.style.color = '#9CA3AF'
+            }}>
             <X size={15} />
           </button>
         )}
       </div>
 
-      {/* New Chat */}
+      {/* ── New Chat button ── */}
       <div className="px-3 pt-3 pb-2 shrink-0">
         <button
           onClick={user ? newChat : () => onOpenAuth('login')}
-          className="btn-brand w-full py-2.5 flex items-center justify-center gap-2 text-sm"
+          className="w-full py-2.5 flex items-center justify-center gap-2
+                     text-sm font-semibold text-white rounded-xl transition-all duration-200"
+          style={{
+            background: 'linear-gradient(135deg, #E07820 0%, #C06A1A 100%)',
+            boxShadow: '0 2px 12px rgba(192,106,26,0.30)',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(192,106,26,0.45)'
+            ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(192,106,26,0.30)'
+            ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
+          }}
         >
           <Plus size={15} /> New Chat
         </button>
       </div>
 
-      {/* Search */}
+      {/* ── Search ── */}
       {user && chats.length > 2 && (
         <div className="px-3 pb-2 shrink-0">
           <div className="relative">
-            <Search size={11} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" />
+            <Search size={11} className="absolute left-3 top-1/2 -translate-y-1/2"
+              style={{ color: '#9CA3AF' }} />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search chats…"
-              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg
-                         pl-8 pr-3 py-1.5 text-xs text-white placeholder:text-[#4B5563]
-                         outline-none focus:border-[#C06A1A]/50 transition-colors"
+              className="w-full rounded-lg pl-8 pr-3 py-1.5 text-xs outline-none transition-all"
+              style={{
+                background: '#ffffff',
+                border: '1px solid #e5e7eb',
+                color: '#374151',
+              }}
+              onFocus={e => (e.target.style.borderColor = '#E07820')}
+              onBlur={e => (e.target.style.borderColor = '#e5e7eb')}
             />
           </div>
         </div>
       )}
 
-      {/* Chat list */}
+      {/* ── Chat list ── */}
       <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5 min-h-0">
         {!user && (
-          <p className="text-xs text-[#6B7280] text-center py-8 px-3 leading-relaxed">
+          <p className="text-xs text-center py-8 px-3 leading-relaxed"
+            style={{ color: '#9CA3AF' }}>
             Sign in to save and access your chat history
           </p>
         )}
         {filtered.length === 0 && search && (
-          <p className="text-xs text-[#6B7280] text-center py-6">No results for "{search}"</p>
+          <p className="text-xs text-center py-6" style={{ color: '#9CA3AF' }}>
+            No results for "{search}"
+          </p>
         )}
 
         {filtered.map(chat => {
-          const isEmpty  = (chat.messages?.length ?? 0) === 0
-          const isActive = activeChat?.id === chat.id
+          const isEmpty   = (chat.messages?.length ?? 0) === 0
+          const isActive  = activeChat?.id === chat.id
           const isEditing = editingId === chat.id
 
           return (
             <div
               key={chat.id}
               onClick={() => !isEditing && handleSelect(chat.id)}
-              className={`sidebar-item group
-                ${isActive ? 'sidebar-item-active' : 'sidebar-item-inactive'}`}
+              className="flex items-start gap-2 px-3 py-2.5 rounded-xl cursor-pointer
+                         border-l-2 transition-all duration-150 group"
+              style={{
+                background:   isActive ? '#fff7ed' : 'transparent',
+                borderColor:  isActive ? '#E07820' : 'transparent',
+              }}
+              onMouseEnter={e => {
+                if (!isActive)
+                  (e.currentTarget as HTMLElement).style.background = '#f9fafb'
+              }}
+              onMouseLeave={e => {
+                if (!isActive)
+                  (e.currentTarget as HTMLElement).style.background = 'transparent'
+              }}
             >
               <MessageSquare size={12}
-                className={`mt-0.5 shrink-0 ${isActive ? 'text-[#E07820]' : 'text-[#6B7280]'}`} />
+                className="mt-0.5 shrink-0"
+                style={{ color: isActive ? '#E07820' : '#9CA3AF' }} />
 
               <div className="flex-1 min-w-0">
                 {isEditing ? (
@@ -153,41 +215,56 @@ export default function Sidebar({ onOpenAuth, onOpenSettings, onClose }: Sidebar
                         if (e.key === 'Enter') confirmEdit(chat.id)
                         if (e.key === 'Escape') setEditingId(null)
                       }}
-                      className="flex-1 min-w-0 bg-[#2a2a2a] border border-[#C06A1A]/40
-                                 rounded px-2 py-0.5 text-xs text-white outline-none"
+                      className="flex-1 min-w-0 rounded px-2 py-0.5 text-xs outline-none"
+                      style={{
+                        background: '#ffffff',
+                        border: '1px solid #E07820',
+                        color: '#374151',
+                      }}
                     />
                     <button onClick={() => confirmEdit(chat.id)}
-                      className="p-0.5 text-green-400 hover:text-green-300 shrink-0">
+                      className="p-0.5 shrink-0 transition-colors"
+                      style={{ color: '#16a34a' }}>
                       <Check size={11} />
                     </button>
                     <button onClick={() => setEditingId(null)}
-                      className="p-0.5 text-[#6B7280] hover:text-gray-300 shrink-0">
+                      className="p-0.5 shrink-0 transition-colors"
+                      style={{ color: '#9CA3AF' }}>
                       <XIcon size={11} />
                     </button>
                   </div>
                 ) : (
-                  <p className={`text-xs font-medium leading-snug line-clamp-2
-                    ${isActive ? 'text-white' : 'text-[#9CA3AF] group-hover:text-gray-200'}`}>
+                  <p className="text-xs font-medium leading-snug line-clamp-2"
+                    style={{ color: isActive ? '#92400e' : '#6B7280' }}>
                     {chat.title}
                     {isEmpty && (
-                      <span className="ml-1.5 text-[9px] text-[#C06A1A] bg-[#C06A1A]/10
-                                       px-1.5 py-0.5 rounded-full align-middle">
+                      <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full align-middle"
+                        style={{ color: '#C06A1A', background: 'rgba(192,106,26,0.10)' }}>
                         empty
                       </span>
                     )}
                   </p>
                 )}
-                <p className="text-[10px] text-[#4B5563] mt-0.5">{formatTime(chat.updatedAt)}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: '#9CA3AF' }}>
+                  {formatTime(chat.updatedAt)}
+                </p>
               </div>
 
               {!isEditing && (
-                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100
+                                transition-opacity shrink-0">
                   <button onClick={e => startEdit(chat.id, chat.title, e)}
-                    className="p-1 rounded text-[#6B7280] hover:text-gray-300 transition-colors">
+                    className="p-1 rounded transition-colors"
+                    style={{ color: '#9CA3AF' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#374151')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}>
                     <Pencil size={11} />
                   </button>
                   <button onClick={e => { e.stopPropagation(); deleteChat(chat.id) }}
-                    className="p-1 rounded text-[#6B7280] hover:text-red-400 transition-colors">
+                    className="p-1 rounded transition-colors"
+                    style={{ color: '#9CA3AF' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}>
                     <Trash2 size={11} />
                   </button>
                 </div>
@@ -197,46 +274,133 @@ export default function Sidebar({ onOpenAuth, onOpenSettings, onClose }: Sidebar
         })}
       </div>
 
-      {/* User area */}
-      <div className="p-3 border-t border-[#2a2a2a] shrink-0">
+      {/* ── User area ── */}
+      <div className="p-3 shrink-0" style={{ borderTop: '1px solid #eeeeee' }}>
         {user ? (
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3 space-y-2.5">
+          <div className="rounded-xl p-3 space-y-2.5"
+            style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-[#C06A1A] flex items-center justify-center
-                              text-white text-xs font-bold shrink-0">
+              {/* Avatar */}
+              <div className="w-8 h-8 rounded-full flex items-center justify-center
+                              text-white text-xs font-bold shrink-0"
+                style={{
+                  background: 'linear-gradient(135deg, #E07820 0%, #C06A1A 100%)',
+                  boxShadow: '0 2px 6px rgba(192,106,26,0.30)',
+                }}>
                 {user.name?.[0]?.toUpperCase() ?? user.email[0].toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-white truncate">{user.name || user.email}</p>
-                <p className="text-[10px] text-[#6B7280] capitalize">{user.role}</p>
+                <p className="text-xs font-semibold truncate" style={{ color: '#111827' }}>
+                  {user.name || user.email}
+                </p>
+                <p className="text-[10px] capitalize" style={{ color: '#9CA3AF' }}>
+                  {user.role}
+                </p>
               </div>
             </div>
+
             <div className="flex gap-1.5">
               {isAdmin && (
-                <button onClick={() => navigate('/admin')} className="btn-ghost flex-1 py-1.5 text-xs flex items-center justify-center gap-1">
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="flex-1 py-1.5 text-xs flex items-center justify-center
+                             gap-1 rounded-xl font-medium transition-all"
+                  style={{
+                    border: '1px solid #e5e7eb',
+                    color: '#6B7280',
+                    background: '#f9fafb',
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.borderColor = '#C06A1A'
+                    ;(e.currentTarget as HTMLElement).style.color = '#C06A1A'
+                    ;(e.currentTarget as HTMLElement).style.background = '#fff7ed'
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.borderColor = '#e5e7eb'
+                    ;(e.currentTarget as HTMLElement).style.color = '#6B7280'
+                    ;(e.currentTarget as HTMLElement).style.background = '#f9fafb'
+                  }}>
                   <Shield size={11} /> Admin
                 </button>
               )}
-              <button onClick={onOpenSettings} className="btn-ghost flex-1 py-1.5 text-xs flex items-center justify-center gap-1">
+              <button
+                onClick={onOpenSettings}
+                className="flex-1 py-1.5 text-xs flex items-center justify-center
+                           gap-1 rounded-xl font-medium transition-all"
+                style={{
+                  border: '1px solid #e5e7eb',
+                  color: '#6B7280',
+                  background: '#f9fafb',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = '#C06A1A'
+                  ;(e.currentTarget as HTMLElement).style.color = '#C06A1A'
+                  ;(e.currentTarget as HTMLElement).style.background = '#fff7ed'
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = '#e5e7eb'
+                  ;(e.currentTarget as HTMLElement).style.color = '#6B7280'
+                  ;(e.currentTarget as HTMLElement).style.background = '#f9fafb'
+                }}>
                 <Settings size={11} /> Settings
               </button>
-              <button onClick={logout}
-                className="flex-1 border border-[#2a2a2a] hover:border-red-900/60 hover:bg-red-950/20
-                           text-[#6B7280] hover:text-red-400 rounded-xl py-1.5 text-xs
-                           flex items-center justify-center gap-1 transition-all">
+              <button
+                onClick={logout}
+                className="flex-1 py-1.5 text-xs flex items-center justify-center
+                           gap-1 rounded-xl font-medium transition-all"
+                style={{
+                  border: '1px solid #fecaca',
+                  color: '#f87171',
+                  background: '#fff5f5',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = '#ef4444'
+                  ;(e.currentTarget as HTMLElement).style.color = '#dc2626'
+                  ;(e.currentTarget as HTMLElement).style.background = '#fee2e2'
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = '#fecaca'
+                  ;(e.currentTarget as HTMLElement).style.color = '#f87171'
+                  ;(e.currentTarget as HTMLElement).style.background = '#fff5f5'
+                }}>
                 <LogOut size={11} /> Out
               </button>
             </div>
           </div>
+
         ) : (
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3 space-y-2">
-            <div className="flex items-center gap-2 text-[#6B7280] text-xs">
+          <div className="rounded-xl p-3 space-y-2"
+            style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
+            <div className="flex items-center gap-2 text-xs" style={{ color: '#9CA3AF' }}>
               <UserIcon size={13} /> Guest Mode
             </div>
-            <button onClick={() => onOpenAuth('login')} className="btn-brand w-full py-2 text-xs">
+            <button
+              onClick={() => onOpenAuth('login')}
+              className="w-full py-2 text-xs font-semibold text-white rounded-xl transition-all"
+              style={{
+                background: 'linear-gradient(135deg, #E07820 0%, #C06A1A 100%)',
+                boxShadow: '0 2px 8px rgba(192,106,26,0.25)',
+              }}>
               Sign In
             </button>
-            <button onClick={() => onOpenAuth('register')} className="btn-ghost w-full py-2 text-xs">
+            <button
+              onClick={() => onOpenAuth('register')}
+              className="w-full py-2 text-xs font-medium rounded-xl transition-all"
+              style={{
+                border: '1px solid #e5e7eb',
+                color: '#6B7280',
+                background: '#f9fafb',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.borderColor = '#C06A1A'
+                ;(e.currentTarget as HTMLElement).style.color = '#C06A1A'
+                ;(e.currentTarget as HTMLElement).style.background = '#fff7ed'
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.borderColor = '#e5e7eb'
+                ;(e.currentTarget as HTMLElement).style.color = '#6B7280'
+                ;(e.currentTarget as HTMLElement).style.background = '#f9fafb'
+              }}>
               Create Account
             </button>
           </div>
