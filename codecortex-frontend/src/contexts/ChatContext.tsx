@@ -12,7 +12,14 @@ interface ChatContextType {
   newChat: () => Promise<void>
   deleteChat: (id: string) => Promise<void>
   renameChat: (id: string, title: string) => Promise<void>
-  sendMessage: (prompt: string, device: string, camera: string, language: string, style: string) => Promise<void>
+  sendMessage: (
+    prompt: string,
+    device: string,
+    camera: string,
+    language: string,
+    style: string,
+    chatId?: string | null,
+  ) => Promise<void>
   profileCode: (code: string, device: string) => Promise<ProfilingMetrics | null>
 }
 
@@ -106,9 +113,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     camera: string,
     language: string = 'C',
     style: string = 'clean',
+    chatId?: string | null,           // ← new optional 6th parameter
   ) => {
-    if (!activeChat && !chats.length) await newChat()
-    const chatId = activeChat?.id
+    // Use explicitly passed chatId first, then fall back to activeChat
+    const resolvedChatId = chatId ?? activeChat?.id
+
+    if (!resolvedChatId && !chats.length) await newChat()
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -116,13 +126,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       content: prompt,
       timestamp: new Date().toISOString(),
     }
-    setActiveChat(prev => prev ? { ...prev, messages: [...prev.messages, userMsg] } : prev)
+    setActiveChat(prev => prev
+      ? { ...prev, messages: [...prev.messages, userMsg] }
+      : prev
+    )
     setGenerating(true)
 
     try {
       const { data } = await generateApi.generate({
-        prompt, device, camera, chatId, language, style,
+        prompt,
+        device,
+        camera,
+        language,
+        style,
+        chatId: resolvedChatId,       // ← always send resolved chatId to backend
       })
+
       const aiMsg: Message = {
         id: data.messageId,
         role: 'assistant',
@@ -131,6 +150,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         metrics: data.metrics,
         timestamp: new Date().toISOString(),
       }
+
       setActiveChat(prev => prev ? {
         ...prev,
         messages: [...prev.messages, aiMsg],
@@ -140,7 +160,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         lastCamera: camera,
       } : prev)
 
-      if (!chatId) {
+      // Update sidebar title on first message
+      if (!resolvedChatId) {
         setChats(prev => prev.map(c =>
           c.id === data.chatId
             ? { ...c, title: prompt.slice(0, 40) + (prompt.length > 40 ? '…' : '') }
@@ -149,7 +170,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
     } catch (e: any) {
       toast.error(e?.response?.data?.detail || 'Generation failed')
-      setActiveChat(prev => prev ? { ...prev, messages: prev.messages.slice(0, -1) } : prev)
+      setActiveChat(prev => prev
+        ? { ...prev, messages: prev.messages.slice(0, -1) }
+        : prev
+      )
     } finally {
       setGenerating(false)
     }
