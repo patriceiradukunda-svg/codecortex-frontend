@@ -12,34 +12,42 @@ interface MetricCardProps {
   value: string | number
   unit: string
   color?: string
+  bg?: string
+  border?: string
   active: boolean
 }
 
-function MetricCard({ icon, label, value, unit, color = 'text-[#E07820]', active }: MetricCardProps) {
+function MetricCard({
+  icon, label, value, unit,
+  color  = '#E07820',
+  bg     = '#fff7ed',
+  border = '#fed7aa',
+  active,
+}: MetricCardProps) {
   return (
-    <div className={`bg-[#1a1a1a] border rounded-xl p-3 flex flex-col items-center text-center gap-1 transition-colors
-      ${active ? 'border-[#383838]' : 'border-[#2a2a2a]'}`}>
-      <div className={`transition-colors ${active ? color : 'text-[#383838]'}`}>{icon}</div>
-      <div className={`text-xl font-bold font-mono transition-colors ${active ? color : 'text-[#383838]'}`}>
+    <div
+      className="rounded-xl p-3 flex flex-col items-center text-center gap-1 transition-all"
+      style={{
+        background:   active ? bg      : '#f9fafb',
+        border:       `1px solid ${active ? border : '#e5e7eb'}`,
+        boxShadow:    active ? `0 2px 8px ${color}18` : 'none',
+      }}
+    >
+      <div style={{ color: active ? color : '#d1d5db' }}>{icon}</div>
+      <div className="text-xl font-bold font-mono" style={{ color: active ? color : '#d1d5db' }}>
         {value}
       </div>
-      <div className="text-[10px] text-[#6B7280]">{unit}</div>
-      <div className="text-[10px] text-[#4B5563] leading-tight">{label}</div>
+      <div className="text-[10px]" style={{ color: '#9CA3AF' }}>{unit}</div>
+      <div className="text-[10px] leading-tight" style={{ color: '#6B7280' }}>{label}</div>
     </div>
   )
 }
 
-/** Detect language from code content and return the correct file extension + label */
 function detectCodeLang(code: string | undefined): { ext: string; label: string } {
   if (!code) return { ext: 'c', label: '.c file' }
   if (code.includes('def ') || code.startsWith('import ') || code.startsWith('#!'))
     return { ext: 'py', label: '.py file' }
-  if (
-    code.includes('::') ||
-    code.includes('std::') ||
-    code.includes('cout') ||
-    code.includes('iostream')
-  )
+  if (code.includes('::') || code.includes('std::') || code.includes('cout') || code.includes('iostream'))
     return { ext: 'cpp', label: '.cpp file' }
   return { ext: 'c', label: '.c file' }
 }
@@ -48,10 +56,8 @@ export default function ProfilingPanel() {
   const { activeChat, profileCode, generating } = useChat()
   const [profiling, setProfiling] = useState(false)
 
-  const m    = activeChat?.lastMetrics
-  const code = activeChat?.lastCode
-
-  // ── Detect language from last generated code ──────────────────────────────
+  const m        = activeChat?.lastMetrics
+  const code     = activeChat?.lastCode
   const codeLang = detectCodeLang(code)
 
   const handlePaste = async () => {
@@ -62,7 +68,6 @@ export default function ProfilingPanel() {
     setProfiling(false)
   }
 
-  // ── Download code with correct extension ──────────────────────────────────
   const downloadCode = () => {
     if (!code) return alert('Generate code first')
     const a = Object.assign(document.createElement('a'), {
@@ -112,21 +117,38 @@ export default function ProfilingPanel() {
   }
 
   return (
-    <div className="w-full lg:w-[288px] bg-[#111] border-l border-[#2a2a2a] flex flex-col h-full overflow-hidden">
+    <div className="w-full lg:w-[288px] flex flex-col h-full overflow-hidden"
+      style={{
+        background:  'linear-gradient(180deg, #fafafa 0%, #f5f5f5 100%)',
+        borderLeft:  '1px solid #e8e8e8',
+      }}>
 
-      {/* Header */}
-      <div className="px-4 py-3 bg-[#0d0d0d] border-b border-[#2a2a2a] flex items-center gap-2 shrink-0">
-        <Activity size={15} className="text-[#E07820] shrink-0" />
+      {/* ── Header ── */}
+      <div className="px-4 py-3 flex items-center gap-2 shrink-0"
+        style={{
+          background:   '#ffffff',
+          borderBottom: '1px solid #eeeeee',
+          boxShadow:    '0 1px 3px rgba(0,0,0,0.04)',
+        }}>
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+          style={{
+            background:  'linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%)',
+            border:      '1px solid #fdba74',
+          }}>
+          <Activity size={14} style={{ color: '#E07820' }} />
+        </div>
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-white">Resource Profiler</h3>
-          <p className="text-[10px] text-[#6B7280] truncate">
+          <h3 className="text-sm font-semibold" style={{ color: '#111827' }}>
+            Resource Profiler
+          </h3>
+          <p className="text-[10px] truncate">
             {generating ? (
-              <span className="flex items-center gap-1 text-[#E07820]">
+              <span className="flex items-center gap-1" style={{ color: '#E07820' }}>
                 <Loader2 size={9} className="animate-spin" /> Generating…
               </span>
             ) : m
-              ? `✅ ${activeChat?.lastMcu} · ${activeChat?.lastCamera}`
-              : 'Send a message to profile'
+              ? <span style={{ color: '#16a34a' }}>✅ {activeChat?.lastMcu} · {activeChat?.lastCamera}</span>
+              : <span style={{ color: '#9CA3AF' }}>Send a message to profile</span>
             }
           </p>
         </div>
@@ -134,63 +156,148 @@ export default function ProfilingPanel() {
 
       <div className="flex-1 overflow-y-auto min-h-0">
 
-        {/* Empty state */}
+        {/* ── Empty state ── */}
         {!m && (
           <div className="flex flex-col items-center justify-center text-center px-5 py-12 gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
-              <BarChart3 size={22} className="text-[#383838]" />
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+              style={{
+                background: '#f3f4f6',
+                border:     '1px solid #e5e7eb',
+              }}>
+              <BarChart3 size={22} style={{ color: '#d1d5db' }} />
             </div>
             <div>
-              <p className="text-sm font-medium text-[#6B7280]">No profiling data yet</p>
-              <p className="text-xs text-[#4B5563] mt-1 leading-relaxed">
-                Generate code in the chat to see Flash, RAM, speed and energy metrics here.
+              <p className="text-sm font-medium" style={{ color: '#6B7280' }}>
+                No profiling data yet
+              </p>
+              <p className="text-xs mt-1 leading-relaxed" style={{ color: '#9CA3AF' }}>
+                Generate code in the chat to see Flash, RAM, speed
+                and energy metrics here.
               </p>
             </div>
-            <button onClick={handlePaste} disabled={profiling}
-              className="text-xs text-[#C06A1A] border border-[#C06A1A]/30 hover:bg-[#C06A1A]/10
-                         px-4 py-2 rounded-xl transition-all disabled:opacity-50 flex items-center gap-1.5">
-              {profiling ? <Loader2 size={12} className="animate-spin" /> : <ClipboardPaste size={12} />}
+            <button
+              onClick={handlePaste}
+              disabled={profiling}
+              className="text-xs px-4 py-2 rounded-xl transition-all
+                         disabled:opacity-50 flex items-center gap-1.5 font-medium"
+              style={{
+                color:      '#C06A1A',
+                border:     '1px solid #fed7aa',
+                background: '#fff7ed',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = '#ffedd5'
+                ;(e.currentTarget as HTMLElement).style.borderColor = '#C06A1A'
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = '#fff7ed'
+                ;(e.currentTarget as HTMLElement).style.borderColor = '#fed7aa'
+              }}
+            >
+              {profiling
+                ? <Loader2 size={12} className="animate-spin" />
+                : <ClipboardPaste size={12} />
+              }
               Paste code to evaluate
             </button>
           </div>
         )}
 
-        {/* Metric cards */}
+        {/* ── Metric cards ── */}
         {m && (
           <>
             <div className="grid grid-cols-2 gap-2 p-3">
-              <MetricCard icon={<FileCode size={14} />}    label="Code Size (Flash)" value={m.flash}   unit="KB"       active={!!m} />
-              <MetricCard icon={<MemoryStick size={14} />} label="Memory (RAM)"      value={m.ram}     unit="KB"       color="text-amber-400" active={!!m} />
-              <MetricCard icon={<Clock size={14} />}       label="Processing Speed"  value={m.latency} unit="ms/frame" color="text-blue-400"  active={!!m} />
-              <MetricCard icon={<Zap size={14} />}         label="Energy per Frame"  value={m.energy}  unit="mJ"       color="text-green-400" active={!!m} />
+              <MetricCard
+                icon={<FileCode size={14} />}
+                label="Code Size (Flash)"
+                value={m.flash}
+                unit="KB"
+                color="#E07820"
+                bg="#fff7ed"
+                border="#fed7aa"
+                active={!!m}
+              />
+              <MetricCard
+                icon={<MemoryStick size={14} />}
+                label="Memory (RAM)"
+                value={m.ram}
+                unit="KB"
+                color="#d97706"
+                bg="#fffbeb"
+                border="#fde68a"
+                active={!!m}
+              />
+              <MetricCard
+                icon={<Clock size={14} />}
+                label="Processing Speed"
+                value={m.latency}
+                unit="ms/frame"
+                color="#2563eb"
+                bg="#eff6ff"
+                border="#bfdbfe"
+                active={!!m}
+              />
+              <MetricCard
+                icon={<Zap size={14} />}
+                label="Energy per Frame"
+                value={m.energy}
+                unit="mJ"
+                color="#16a34a"
+                bg="#f0fdf4"
+                border="#bbf7d0"
+                active={!!m}
+              />
             </div>
 
-            <div className="mx-3 mb-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3">
+            {/* ── Complexity card ── */}
+            <div className="mx-3 mb-3 rounded-xl p-3"
+              style={{
+                background: '#ffffff',
+                border:     '1px solid #e5e7eb',
+                boxShadow:  '0 1px 4px rgba(0,0,0,0.04)',
+              }}>
               <div className="flex items-center gap-1.5 mb-2">
-                <GitBranch size={12} className="text-purple-400" />
-                <span className="text-xs font-semibold text-gray-300">Time Complexity</span>
+                <GitBranch size={12} style={{ color: '#7c3aed' }} />
+                <span className="text-xs font-semibold" style={{ color: '#374151' }}>
+                  Time Complexity
+                </span>
               </div>
-              <span className="bg-[#252525] px-2.5 py-0.5 rounded-full text-xs font-mono text-[#E07820] font-bold">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold"
+                style={{
+                  background: '#f5f3ff',
+                  color:      '#7c3aed',
+                  border:     '1px solid #ddd6fe',
+                }}>
                 {m.complexity}
               </span>
-              <p className="text-[11px] text-[#6B7280] mt-2 leading-relaxed">
+              <p className="text-[11px] mt-2 leading-relaxed" style={{ color: '#6B7280' }}>
                 {m.complexityDesc}
               </p>
               {m.notes && (
-                <p className="text-[11px] text-[#4B5563] mt-1.5 border-t border-[#2a2a2a] pt-1.5 leading-relaxed">
+                <p className="text-[11px] mt-1.5 pt-1.5 leading-relaxed"
+                  style={{
+                    color:       '#9CA3AF',
+                    borderTop:   '1px solid #f3f4f6',
+                  }}>
                   {m.notes}
                 </p>
               )}
             </div>
 
+            {/* ── Code preview ── */}
             {code && (
               <div className="mx-3 mb-3">
-                <p className="text-[10px] text-[#6B7280] mb-1.5 flex items-center gap-1">
-                  <FileCode size={10} /> Generated Code
+                <p className="text-[10px] mb-1.5 flex items-center gap-1"
+                  style={{ color: '#9CA3AF' }}>
+                  <FileCode size={10} /> Generated Code Preview
                 </p>
-                <div className="bg-[#0d0d0d] border border-[#2a2a2a] rounded-xl p-3
-                                font-mono text-[11px] text-[#9CA3AF] overflow-x-auto
-                                max-h-[140px] whitespace-pre leading-relaxed">
+                <div className="rounded-xl p-3 font-mono text-[11px] overflow-x-auto
+                                max-h-[140px] whitespace-pre leading-relaxed"
+                  style={{
+                    background: '#1e1e1e',
+                    border:     '1px solid #374151',
+                    color:      '#d1d5db',
+                  }}>
                   {code.slice(0, 500)}{code.length > 500 ? '\n…' : ''}
                 </div>
               </div>
@@ -199,25 +306,84 @@ export default function ProfilingPanel() {
         )}
       </div>
 
-      {/* Action buttons */}
-      <div className="p-3 border-t border-[#2a2a2a] space-y-2 shrink-0">
-        <button onClick={handlePaste} disabled={profiling}
-          className="w-full bg-[#1a1a1a] hover:bg-[#252525] border border-[#383838] text-white
-                     text-xs py-2.5 rounded-xl flex items-center justify-center gap-2
-                     transition-all disabled:opacity-50">
-          {profiling ? <Loader2 size={12} className="animate-spin" /> : <ClipboardPaste size={12} />}
+      {/* ── Action buttons ── */}
+      <div className="p-3 space-y-2 shrink-0"
+        style={{ borderTop: '1px solid #eeeeee', background: '#ffffff' }}>
+
+        {/* Paste & Evaluate */}
+        <button
+          onClick={handlePaste}
+          disabled={profiling}
+          className="w-full text-xs py-2.5 rounded-xl flex items-center justify-center
+                     gap-2 transition-all disabled:opacity-50 font-medium"
+          style={{
+            background: '#f9fafb',
+            border:     '1px solid #e5e7eb',
+            color:      '#374151',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.background    = '#fff7ed'
+            ;(e.currentTarget as HTMLElement).style.borderColor  = '#C06A1A'
+            ;(e.currentTarget as HTMLElement).style.color        = '#C06A1A'
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.background   = '#f9fafb'
+            ;(e.currentTarget as HTMLElement).style.borderColor = '#e5e7eb'
+            ;(e.currentTarget as HTMLElement).style.color       = '#374151'
+          }}
+        >
+          {profiling
+            ? <Loader2 size={12} className="animate-spin" />
+            : <ClipboardPaste size={12} />
+          }
           Paste & Evaluate Code
         </button>
+
+        {/* Download buttons */}
         <div className="grid grid-cols-3 gap-1.5">
           {[
-            { label: codeLang.label, icon: <Download size={12} className="text-[#E07820]" />, fn: downloadCode },
-            { label: 'PDF',          icon: <Download size={12} className="text-red-400" />,   fn: downloadPDF  },
-            { label: 'JSON',         icon: <FileJson size={12} className="text-blue-400" />,  fn: downloadJSON },
+            {
+              label: codeLang.label,
+              icon:  <Download size={12} style={{ color: '#E07820' }} />,
+              fn:    downloadCode,
+              hover: { bg: '#fff7ed', border: '#C06A1A', text: '#C06A1A' },
+            },
+            {
+              label: 'PDF',
+              icon:  <Download size={12} style={{ color: '#dc2626' }} />,
+              fn:    downloadPDF,
+              hover: { bg: '#fff5f5', border: '#ef4444', text: '#dc2626' },
+            },
+            {
+              label: 'JSON',
+              icon:  <FileJson size={12} style={{ color: '#2563eb' }} />,
+              fn:    downloadJSON,
+              hover: { bg: '#eff6ff', border: '#3b82f6', text: '#2563eb' },
+            },
           ].map(b => (
-            <button key={b.label} onClick={b.fn}
-              className="bg-[#1a1a1a] hover:bg-[#252525] border border-[#383838] text-white
-                         text-[11px] py-2.5 rounded-xl flex flex-col items-center gap-1 transition-all">
-              {b.icon}{b.label}
+            <button
+              key={b.label}
+              onClick={b.fn}
+              className="text-[11px] py-2.5 rounded-xl flex flex-col items-center
+                         gap-1 transition-all font-medium"
+              style={{
+                background: '#f9fafb',
+                border:     '1px solid #e5e7eb',
+                color:      '#6B7280',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background   = b.hover.bg
+                ;(e.currentTarget as HTMLElement).style.borderColor = b.hover.border
+                ;(e.currentTarget as HTMLElement).style.color       = b.hover.text
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background   = '#f9fafb'
+                ;(e.currentTarget as HTMLElement).style.borderColor = '#e5e7eb'
+                ;(e.currentTarget as HTMLElement).style.color       = '#6B7280'
+              }}
+            >
+              {b.icon}
+              {b.label}
             </button>
           ))}
         </div>
