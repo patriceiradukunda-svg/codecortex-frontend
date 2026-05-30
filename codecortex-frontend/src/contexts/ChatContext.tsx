@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
 import { Chat, Message, ProfilingMetrics } from '@/types'
 import { chatsApi, generateApi } from '@/services/api'
 import toast from 'react-hot-toast'
@@ -22,8 +22,15 @@ interface ChatContextType {
   ) => Promise<void>
   deleteMessage: (chatId: string, messageId: string) => Promise<void>
   editMessage: (chatId: string, messageId: string, content: string) => Promise<void>
-  resendMessage: (prompt: string, device: string, camera: string, language: string, style: string) => Promise<void>
+  resendMessage: (
+    prompt: string,
+    device: string,
+    camera: string,
+    language: string,
+    style: string,
+  ) => Promise<void>
   profileCode: (code: string, device: string) => Promise<ProfilingMetrics | null>
+  setActiveChat: React.Dispatch<React.SetStateAction<Chat | null>>
 }
 
 const ChatContext = createContext<ChatContextType | null>(null)
@@ -58,7 +65,7 @@ function isEmptyChat(chat: Chat): boolean {
 }
 
 export function ChatProvider({ children }: { children: ReactNode }) {
-  const [chats, setChats] = useState<Chat[]>([])
+  const [chats, setChats]           = useState<Chat[]>([])
   const [activeChat, setActiveChat] = useState<Chat | null>(null)
   const [generating, setGenerating] = useState(false)
 
@@ -71,7 +78,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setActiveChat(normalized[0])
       }
     } catch {
-      // silent
+      // silent — user may not be logged in
     }
   }, [activeChat])
 
@@ -127,6 +134,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       content: prompt,
       timestamp: new Date().toISOString(),
     }
+
     setActiveChat(prev => prev
       ? { ...prev, messages: [...prev.messages, userMsg] }
       : prev
@@ -138,6 +146,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         prompt, device, camera, language, style,
         chatId: resolvedChatId,
       })
+
       const aiMsg: Message = {
         id: data.messageId,
         role: 'assistant',
@@ -146,6 +155,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         metrics: data.metrics,
         timestamp: new Date().toISOString(),
       }
+
       setActiveChat(prev => prev ? {
         ...prev,
         messages: [...prev.messages, aiMsg],
@@ -184,15 +194,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     try {
       await chatsApi.deleteMessage(chatId, messageId)
     } catch {
-      // Rollback by reloading the chat from server
       toast.error('Failed to delete message')
+      // Rollback by reloading from server
       const { data } = await chatsApi.get(chatId)
       setActiveChat(normalizeChat(data))
     }
   }
 
-  // ── Edit a single message content ─────────────────────────────────────────
-  const editMessage = async (chatId: string, messageId: string, content: string) => {
+  // ── Edit a single message ─────────────────────────────────────────────────
+  const editMessage = async (
+    chatId: string,
+    messageId: string,
+    content: string,
+  ) => {
     // Optimistic update
     setActiveChat(prev => prev ? {
       ...prev,
@@ -205,12 +219,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       await chatsApi.editMessage(chatId, messageId, content)
     } catch {
       toast.error('Failed to edit message')
+      // Rollback
       const { data } = await chatsApi.get(chatId)
       setActiveChat(normalizeChat(data))
     }
   }
 
-  // ── Resend — edit then generate a new AI response ─────────────────────────
+  // ── Resend — send the same prompt again in the active chat ────────────────
   const resendMessage = async (
     prompt: string,
     device: string,
@@ -234,10 +249,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   return (
     <ChatContext.Provider value={{
-      chats, activeChat, generating,
-      loadChats, selectChat, newChat, deleteChat, renameChat,
-      sendMessage, deleteMessage, editMessage, resendMessage,
+      chats,
+      activeChat,
+      generating,
+      loadChats,
+      selectChat,
+      newChat,
+      deleteChat,
+      renameChat,
+      sendMessage,
+      deleteMessage,
+      editMessage,
+      resendMessage,
       profileCode,
+      setActiveChat,
     }}>
       {children}
     </ChatContext.Provider>
