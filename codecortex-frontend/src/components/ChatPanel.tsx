@@ -24,8 +24,6 @@ interface ChatPanelProps {
 type Language    = 'C' | 'C++' | 'Python'
 type OutputStyle = 'clean' | 'commented' | 'guide'
 
-/* ── Helpers ──────────────────────────────────────────────────────────────── */
-
 function formatTime(timestamp: any): string {
   try {
     if (!timestamp) return ''
@@ -95,23 +93,21 @@ function CopyButton({ text, size = 13 }: { text: string; size?: number }) {
   }
   return (
     <button onClick={copy}
-      className="p-1.5 rounded-lg text-[#6B7280] hover:text-white hover:bg-white/10 transition-all"
+      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-800 hover:bg-gray-100 transition-all"
       title="Copy">
-      {copied ? <Check size={size} className="text-green-400" /> : <Copy size={size} />}
+      {copied ? <Check size={size} className="text-green-600" /> : <Copy size={size} />}
     </button>
   )
 }
 
 const SUGGESTIONS = [
   { icon: <Cpu    size={14} className="text-[#E07820]" />,  text: 'Initialize DCMI camera on STM32H7' },
-  { icon: <Eye    size={14} className="text-blue-400" />,   text: 'Run TFLite object detection on ESP32-CAM' },
-  { icon: <Camera size={14} className="text-green-400" />,  text: 'Capture and process frames on Raspberry Pi' },
-  { icon: <Zap   size={14} className="text-purple-400" />,  text: 'Sobel edge detection for embedded CV' },
+  { icon: <Eye    size={14} className="text-blue-500" />,   text: 'Run TFLite object detection on ESP32-CAM' },
+  { icon: <Camera size={14} className="text-green-500" />,  text: 'Capture and process frames on Raspberry Pi' },
+  { icon: <Zap    size={14} className="text-purple-500" />, text: 'Sobel edge detection for embedded CV' },
 ]
 
 const MAX_CHARS = 2000
-
-/* ── Component ────────────────────────────────────────────────────────────── */
 
 export default function ChatPanel({
   onOpenAuth, onOpenSettings, sidebarOpen, onToggleSidebar,
@@ -125,7 +121,6 @@ export default function ChatPanel({
   const [showScrollBtn, setShowScrollBtn]     = useState(false)
   const [mobileTab, setMobileTab]             = useState<'chat' | 'profiler'>('chat')
 
-  // ── Modal flow state ──
   const [showLangPicker, setShowLangPicker]   = useState(false)
   const [showStylePicker, setShowStylePicker] = useState(false)
   const [pendingPrompt, setPendingPrompt]     = useState('')
@@ -164,20 +159,26 @@ export default function ChatPanel({
   }
 
   // Step 3 — style chosen → send message
+  // activeChat?.id is passed so backend appends to same chat (multiple messages)
   const handleStyleSelect = async (style: OutputStyle) => {
     setShowStylePicker(false)
-    await sendMessage(pendingPrompt, device, camera, selectedLang, style)
+    await sendMessage(
+      pendingPrompt,
+      device,
+      camera,
+      selectedLang,
+      style,
+      activeChat?.id ?? null,   // ← THIS LINE enables multiple messages in one chat
+    )
     setPendingPrompt('')
   }
 
-  // Cancel at language step
   const handleLanguageCancel = () => {
     setShowLangPicker(false)
     setPrompt(pendingPrompt)
     setPendingPrompt('')
   }
 
-  // Cancel at style step
   const handleStyleCancel = () => {
     setShowStylePicker(false)
     setPrompt(pendingPrompt)
@@ -207,12 +208,12 @@ export default function ChatPanel({
     })()
   }))
 
-  const charsLeft  = MAX_CHARS - prompt.length
-  const charsWarn  = charsLeft < 200
-  const langMeta   = getLangMeta(lastLang)
+  const charsLeft = MAX_CHARS - prompt.length
+  const charsWarn = charsLeft < 200
+  const langMeta  = getLangMeta(lastLang)
 
   return (
-    <div className="flex-1 flex flex-col bg-[#161616] min-w-0 h-full overflow-hidden">
+    <div className="flex-1 flex flex-col bg-white min-w-0 h-full overflow-hidden">
 
       {/* ── Modal overlays ── */}
       {showLangPicker && (
@@ -230,50 +231,49 @@ export default function ChatPanel({
 
       {/* ── Header ── */}
       <header className="flex items-center justify-between px-3 py-2.5
-                         bg-[#0f0f0f] border-b border-[#2a2a2a] shrink-0">
+                         bg-white border-b border-gray-200 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <button onClick={onToggleSidebar}
-            className="shrink-0 p-1.5 rounded-lg text-[#6B7280] hover:text-white hover:bg-[#1e1e1e] transition-colors">
+            className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
             {sidebarOpen ? <PanelLeftClose size={17} /> : <PanelLeftOpen size={17} />}
           </button>
 
-          {/* Logo glow */}
           <div className="relative shrink-0">
-            <div className="absolute inset-0 rounded-full bg-[#C06A1A]/25 blur-md animate-pulse-slow" />
-            <div className="relative w-7 h-7 rounded-full bg-[#C06A1A]/15 border border-[#C06A1A]/35
+            <div className="absolute inset-0 rounded-full bg-[#C06A1A]/20 blur-md animate-pulse-slow" />
+            <div className="relative w-7 h-7 rounded-full bg-[#C06A1A]/10 border border-[#C06A1A]/30
                             flex items-center justify-center">
               <Brain size={14} className="text-[#E07820]" />
             </div>
           </div>
 
           <div className="min-w-0">
-            <p className="font-semibold text-sm text-white truncate leading-tight">
+            <p className="font-semibold text-sm text-gray-800 truncate leading-tight">
               {activeChat?.title || 'CodeCortex Pro'}
             </p>
-            <p className="text-[10px] text-[#6B7280] hidden sm:block">AI Embedded Vision Assistant</p>
+            <p className="text-[10px] text-gray-400 hidden sm:block">AI Embedded Vision Assistant</p>
           </div>
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
           <button onClick={() => setMobileTab(t => t === 'chat' ? 'profiler' : 'chat')}
-            className="lg:hidden p-1.5 rounded-lg text-[#6B7280] hover:text-white hover:bg-[#1e1e1e] transition-colors">
+            className="lg:hidden p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
             <Activity size={16} />
           </button>
           <button onClick={onOpenSettings}
-            className="p-1.5 rounded-lg text-[#6B7280] hover:text-white hover:bg-[#1e1e1e] transition-colors">
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
             <Settings2 size={16} />
           </button>
         </div>
       </header>
 
       {/* ── Mobile tab bar ── */}
-      <div className="lg:hidden flex border-b border-[#2a2a2a] bg-[#0f0f0f] shrink-0">
+      <div className="lg:hidden flex border-b border-gray-200 bg-white shrink-0">
         {(['chat', 'profiler'] as const).map(tab => (
           <button key={tab} onClick={() => setMobileTab(tab)}
             className={`flex-1 py-2 text-xs font-medium transition-colors
               ${mobileTab === tab
                 ? 'text-[#E07820] border-b-2 border-[#E07820]'
-                : 'text-[#6B7280] hover:text-gray-400'
+                : 'text-gray-400 hover:text-gray-600'
               }`}>
             {tab === 'chat' ? '💬 Chat' : '📊 Profiler'}
           </button>
@@ -289,33 +289,35 @@ export default function ChatPanel({
 
           {/* Messages */}
           <div ref={scrollRef} onScroll={handleScroll}
-            className="flex-1 overflow-y-auto px-3 sm:px-5 py-5 flex flex-col gap-4 min-h-0">
+            className="flex-1 overflow-y-auto px-3 sm:px-5 py-5 flex flex-col gap-4 min-h-0 bg-gray-50">
 
             {/* Empty / welcome state */}
             {messages.length === 0 && (
               <div className="flex-1 flex flex-col items-center justify-center gap-6 px-4 text-center">
                 <div className="relative">
-                  <div className="absolute inset-0 rounded-full bg-[#C06A1A]/15 blur-3xl scale-150 animate-pulse-slow" />
+                  <div className="absolute inset-0 rounded-full bg-[#C06A1A]/10 blur-3xl scale-150 animate-pulse-slow" />
                   <div className="relative w-20 h-20 rounded-full
-                                  bg-gradient-to-br from-[#C06A1A]/25 to-[#E07820]/5
-                                  border border-[#C06A1A]/25 flex items-center justify-center">
+                                  bg-gradient-to-br from-[#C06A1A]/15 to-[#E07820]/5
+                                  border border-[#C06A1A]/20 flex items-center justify-center">
                     <Brain size={36} className="text-[#E07820]" />
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-2">CodeCortex Pro</h2>
-                  <p className="text-[#6B7280] text-sm max-w-sm leading-relaxed">
-                    AI-powered embedded code generation for computer vision.
-                    Pick a device and camera, then describe what you need.
-                    You'll choose language and output style when you send.
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">CodeCortex Pro</h2>
+                  <p className="text-gray-500 text-sm max-w-sm leading-relaxed">
+                    AI-powered embedded C/C++ code generation for computer vision
+                    tasks. Select your device and camera, then describe what you
+                    need.
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
                   {SUGGESTIONS.map(s => (
                     <button key={s.text} onClick={() => setPrompt(s.text)}
-                      className="card-hover flex items-start gap-2.5 text-left px-3 py-3 group">
+                      className="flex items-start gap-2.5 text-left px-3 py-3 rounded-xl
+                                 border border-gray-200 bg-white hover:border-[#E07820]/40
+                                 hover:bg-orange-50 transition-all group">
                       <span className="shrink-0 mt-0.5">{s.icon}</span>
-                      <span className="text-xs text-[#9CA3AF] group-hover:text-gray-200 leading-snug">{s.text}</span>
+                      <span className="text-xs text-gray-500 group-hover:text-gray-700 leading-snug">{s.text}</span>
                     </button>
                   ))}
                 </div>
@@ -341,8 +343,8 @@ export default function ChatPanel({
                   <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center
                                    text-xs font-bold self-start mt-0.5
                     ${isUser
-                      ? 'bg-gradient-to-br from-[#E07820] to-[#C06A1A] text-white shadow-md shadow-[#C06A1A]/30'
-                      : 'bg-[#1e1e1e] border border-[#383838]'
+                      ? 'bg-gradient-to-br from-[#E07820] to-[#C06A1A] text-white shadow-md shadow-[#C06A1A]/20'
+                      : 'bg-white border border-gray-200 shadow-sm'
                     }`}>
                     {isUser ? '👤' : '🤖'}
                   </div>
@@ -353,7 +355,10 @@ export default function ChatPanel({
                     {/* User bubble */}
                     {isUser && (
                       <div className="relative group/bubble">
-                        <div className="bubble-user">{msg.content}</div>
+                        <div className="bg-[#E07820] text-white px-4 py-2.5 rounded-2xl
+                                        rounded-tr-sm text-sm leading-relaxed shadow-sm">
+                          {msg.content}
+                        </div>
                         <div className="absolute top-1 -left-9 opacity-0 group-hover/bubble:opacity-100 transition-opacity">
                           <CopyButton text={msg.content} />
                         </div>
@@ -365,12 +370,13 @@ export default function ChatPanel({
                       <div className="w-full space-y-2.5">
 
                         {isGenerated && (
-                          <div className="flex items-center gap-1.5 text-[11px] text-green-400 font-medium">
+                          <div className="flex items-center gap-1.5 text-[11px] text-green-600 font-medium">
                             <CheckCircle2 size={12} /> Firmware generated successfully
                           </div>
                         )}
 
-                        <div className="relative group/bubble bubble-ai">
+                        <div className="relative group/bubble bg-white border border-gray-200
+                                        rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm text-gray-700">
                           <MessageText text={clean} />
                           <div className="absolute top-2 -right-9 opacity-0 group-hover/bubble:opacity-100 transition-opacity">
                             <CopyButton text={clean} />
@@ -381,14 +387,16 @@ export default function ChatPanel({
                         {msg.metrics && (
                           <div className="flex flex-wrap gap-1.5">
                             {[
-                              { label: 'Flash',      value: `${msg.metrics.flash} KB`,      color: 'text-[#E07820]',  bg: 'bg-[#C06A1A]/10 border-[#C06A1A]/25' },
-                              { label: 'RAM',        value: `${msg.metrics.ram} KB`,        color: 'text-amber-400',  bg: 'bg-amber-400/10 border-amber-400/25' },
-                              { label: 'Speed',      value: `${msg.metrics.latency} ms/f`,  color: 'text-blue-400',   bg: 'bg-blue-400/10  border-blue-400/25' },
-                              { label: 'Energy',     value: `${msg.metrics.energy} mJ`,     color: 'text-green-400',  bg: 'bg-green-400/10 border-green-400/25' },
-                              { label: 'Complexity', value: msg.metrics.complexity,          color: 'text-purple-400', bg: 'bg-purple-400/10 border-purple-400/25' },
+                              { label: 'Flash',      value: `${msg.metrics.flash} KB`,     color: 'text-[#E07820]',  bg: 'bg-orange-50 border-orange-200' },
+                              { label: 'RAM',        value: `${msg.metrics.ram} KB`,        color: 'text-amber-600',  bg: 'bg-amber-50 border-amber-200' },
+                              { label: 'Speed',      value: `${msg.metrics.latency} ms/f`,  color: 'text-blue-600',   bg: 'bg-blue-50 border-blue-200' },
+                              { label: 'Energy',     value: `${msg.metrics.energy} mJ`,     color: 'text-green-600',  bg: 'bg-green-50 border-green-200' },
+                              { label: 'Complexity', value: msg.metrics.complexity,          color: 'text-purple-600', bg: 'bg-purple-50 border-purple-200' },
                             ].map(m => (
-                              <div key={m.label} className={`metric-pill ${m.bg}`}>
-                                <span className="text-[#6B7280]">{m.label}</span>
+                              <div key={m.label}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full
+                                            border text-[10px] font-medium ${m.bg}`}>
+                                <span className="text-gray-400">{m.label}</span>
                                 <span className={`font-mono font-semibold ${m.color}`}>{m.value}</span>
                               </div>
                             ))}
@@ -397,22 +405,23 @@ export default function ChatPanel({
 
                         {/* Code block */}
                         {msg.code && (
-                          <div className="w-full rounded-xl overflow-hidden border border-[#383838]/60 bg-[#0d0d0d]">
-                            <div className="code-header">
+                          <div className="w-full rounded-xl overflow-hidden border border-gray-200 bg-[#1e1e1e]">
+                            <div className="flex items-center justify-between px-4 py-2
+                                            bg-[#2d2d2d] border-b border-gray-700">
                               <div className="flex items-center gap-2">
                                 <div className="flex gap-1.5">
-                                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/50" />
-                                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50" />
-                                  <div className="w-2.5 h-2.5 rounded-full bg-green-500/50" />
+                                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+                                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
+                                  <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
                                 </div>
                                 <span className="text-[10px] text-[#E07820] font-mono">{filename}</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-[#4B5563] font-mono uppercase">{syntax}</span>
+                                <span className="text-[10px] text-gray-400 font-mono uppercase">{syntax}</span>
                                 <button
                                   onClick={() => navigator.clipboard.writeText(msg.code!)}
-                                  className="flex items-center gap-1 text-[10px] text-[#6B7280]
-                                             hover:text-white px-2 py-0.5 rounded hover:bg-white/5 transition-all">
+                                  className="flex items-center gap-1 text-[10px] text-gray-400
+                                             hover:text-white px-2 py-0.5 rounded hover:bg-white/10 transition-all">
                                   <Copy size={10} /> Copy
                                 </button>
                               </div>
@@ -423,9 +432,9 @@ export default function ChatPanel({
                               showLineNumbers
                               customStyle={{
                                 margin: 0, borderRadius: 0, fontSize: '0.7rem',
-                                maxHeight: '320px', background: '#0d0d0d', padding: '1rem',
+                                maxHeight: '320px', background: '#1e1e1e', padding: '1rem',
                               }}
-                              lineNumberStyle={{ color: '#3a3a3a', fontSize: '0.65rem', minWidth: '2.5rem' }}
+                              lineNumberStyle={{ color: '#4a4a4a', fontSize: '0.65rem', minWidth: '2.5rem' }}
                             >
                               {msg.code}
                             </SyntaxHighlighter>
@@ -434,7 +443,7 @@ export default function ChatPanel({
                       </div>
                     )}
 
-                    <span className="text-[10px] text-[#4B5563] px-1">{formatTime(msg.timestamp)}</span>
+                    <span className="text-[10px] text-gray-400 px-1">{formatTime(msg.timestamp)}</span>
                   </div>
                 </div>
               )
@@ -443,16 +452,17 @@ export default function ChatPanel({
             {/* Generating dots */}
             {generating && (
               <div className="flex gap-3 animate-fade-in">
-                <div className="w-7 h-7 rounded-full bg-[#1e1e1e] border border-[#383838]
-                                flex items-center justify-center text-xs shrink-0">🤖</div>
-                <div className="bubble-ai flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-white border border-gray-200
+                                shadow-sm flex items-center justify-center text-xs shrink-0">🤖</div>
+                <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm
+                                px-4 py-3 shadow-sm flex items-center gap-3">
                   <div className="flex gap-1">
                     {[0, 150, 300].map(d => (
                       <div key={d} className="w-1.5 h-1.5 rounded-full bg-[#E07820] animate-bounce"
                         style={{ animationDelay: `${d}ms` }} />
                     ))}
                   </div>
-                  <span className="text-[#6B7280] text-sm">Generating {lastLang} firmware…</span>
+                  <span className="text-gray-400 text-sm">Generating {lastLang} firmware…</span>
                 </div>
               </div>
             )}
@@ -464,7 +474,7 @@ export default function ChatPanel({
           {showScrollBtn && (
             <button onClick={scrollToBottom}
               className="absolute bottom-[160px] right-4 z-10 w-8 h-8 rounded-full
-                         bg-[#C06A1A] hover:bg-[#E07820] text-white shadow-lg shadow-[#C06A1A]/30
+                         bg-[#E07820] hover:bg-[#C06A1A] text-white shadow-lg shadow-[#C06A1A]/20
                          flex items-center justify-center transition-all animate-fade-in">
               <ChevronDown size={16} />
             </button>
@@ -472,37 +482,41 @@ export default function ChatPanel({
 
           {/* ── Input area ── */}
           <div
-            className="bg-[#111] border-t border-[#2a2a2a] shrink-0 px-3 sm:px-4 pt-3"
+            className="bg-white border-t border-gray-200 shrink-0 px-3 sm:px-4 pt-3"
             style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
           >
             {/* Device + Camera */}
             <div className="flex gap-2 mb-2.5">
               <div className="flex-1 min-w-0">
-                <label className="text-[10px] text-[#6B7280] mb-1 flex items-center gap-1">
+                <label className="text-[10px] text-gray-400 mb-1 flex items-center gap-1">
                   <Cpu size={9} /> Target Device
                 </label>
                 <select value={device} onChange={e => setDevice(e.target.value)}
-                  className="select-field">
+                  className="w-full text-xs rounded-lg border border-gray-200 bg-white
+                             text-gray-700 px-2.5 py-1.5 focus:outline-none focus:border-[#E07820]
+                             focus:ring-1 focus:ring-[#E07820]/30 transition-all">
                   {DEVICES.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div className="flex-1 min-w-0">
-                <label className="text-[10px] text-[#6B7280] mb-1 flex items-center gap-1">
+                <label className="text-[10px] text-gray-400 mb-1 flex items-center gap-1">
                   <Camera size={9} /> Camera Module
                 </label>
                 <select value={camera} onChange={e => setCamera(e.target.value)}
-                  className="select-field">
+                  className="w-full text-xs rounded-lg border border-gray-200 bg-white
+                             text-gray-700 px-2.5 py-1.5 focus:outline-none focus:border-[#E07820]
+                             focus:ring-1 focus:ring-[#E07820]/30 transition-all">
                   {CAMERAS.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
             </div>
 
-            {/* Last used lang/style hint */}
+            {/* Last used lang hint */}
             {lastLang && (
-              <p className="text-[10px] text-[#4B5563] mb-2">
+              <p className="text-[10px] text-gray-400 mb-2">
                 Last used: <span className="text-[#C06A1A]">{langMeta.label}</span>
                 {' · '}
-                <span className="text-[#6B7280]">Language & style selected on send ↗</span>
+                <span className="text-gray-400">Language and style selected on send ↗</span>
               </p>
             )}
 
@@ -515,24 +529,30 @@ export default function ChatPanel({
                   onChange={handleTextareaChange}
                   onKeyDown={handleKeyDown}
                   placeholder="Describe the embedded CV code you need…"
-                  className="input-field resize-none py-2.5 pr-14 leading-relaxed"
+                  className="w-full text-sm rounded-xl border border-gray-200 bg-white
+                             text-gray-800 placeholder-gray-400 px-3.5 py-2.5 pr-14
+                             focus:outline-none focus:border-[#E07820] focus:ring-2
+                             focus:ring-[#E07820]/20 transition-all resize-none leading-relaxed"
                   style={{ height: '44px', minHeight: '44px', maxHeight: '160px' }}
                 />
                 {prompt.length > 0 && (
                   <span className={`absolute bottom-2.5 right-3 text-[10px] pointer-events-none transition-colors
-                    ${charsWarn ? 'text-amber-500' : 'text-[#4B5563]'}`}>
+                    ${charsWarn ? 'text-amber-500' : 'text-gray-400'}`}>
                     {charsLeft}
                   </span>
                 )}
               </div>
               <button onClick={handleSend}
                 disabled={!prompt.trim() || generating}
-                className="btn-brand px-4 h-[44px] flex items-center justify-center shrink-0">
+                className="bg-[#E07820] hover:bg-[#C06A1A] disabled:opacity-40
+                           text-white rounded-xl px-4 h-[44px] flex items-center
+                           justify-center shrink-0 transition-all shadow-sm
+                           shadow-[#C06A1A]/20">
                 {generating ? <Loader2 size={16} className="animate-spin" /> : <Send size={15} />}
               </button>
             </div>
 
-            <p className="text-[10px] text-[#4B5563] text-center mt-2 mb-3">
+            <p className="text-[10px] text-gray-400 text-center mt-2 mb-3">
               Enter to send · Shift+Enter for new line
             </p>
           </div>
