@@ -20,6 +20,9 @@ interface ChatContextType {
     style: string,
     chatId?: string | null,
   ) => Promise<void>
+  deleteMessage: (chatId: string, messageId: string) => Promise<void>
+  editMessage: (chatId: string, messageId: string, content: string) => Promise<void>
+  resendMessage: (prompt: string, device: string, camera: string, language: string, style: string) => Promise<void>
   profileCode: (code: string, device: string) => Promise<ProfilingMetrics | null>
 }
 
@@ -68,7 +71,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setActiveChat(normalized[0])
       }
     } catch {
-      // silent — user may not be logged in
+      // silent
     }
   }, [activeChat])
 
@@ -113,11 +116,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     camera: string,
     language: string = 'C',
     style: string = 'clean',
-    chatId?: string | null,           // ← new optional 6th parameter
+    chatId?: string | null,
   ) => {
-    // Use explicitly passed chatId first, then fall back to activeChat
     const resolvedChatId = chatId ?? activeChat?.id
-
     if (!resolvedChatId && !chats.length) await newChat()
 
     const userMsg: Message = {
@@ -134,14 +135,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     try {
       const { data } = await generateApi.generate({
-        prompt,
-        device,
-        camera,
-        language,
-        style,
-        chatId: resolvedChatId,       // ← always send resolved chatId to backend
+        prompt, device, camera, language, style,
+        chatId: resolvedChatId,
       })
-
       const aiMsg: Message = {
         id: data.messageId,
         role: 'assistant',
@@ -150,7 +146,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         metrics: data.metrics,
         timestamp: new Date().toISOString(),
       }
-
       setActiveChat(prev => prev ? {
         ...prev,
         messages: [...prev.messages, aiMsg],
@@ -160,7 +155,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         lastCamera: camera,
       } : prev)
 
-      // Update sidebar title on first message
       if (!resolvedChatId) {
         setChats(prev => prev.map(c =>
           c.id === data.chatId
@@ -179,6 +173,54 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // ── Delete a single message ───────────────────────────────────────────────
+  const deleteMessage = async (chatId: string, messageId: string) => {
+    // Optimistic update — remove immediately from UI
+    setActiveChat(prev => prev ? {
+      ...prev,
+      messages: prev.messages.filter(m => m.id !== messageId),
+    } : prev)
+
+    try {
+      await chatsApi.deleteMessage(chatId, messageId)
+    } catch {
+      // Rollback by reloading the chat from server
+      toast.error('Failed to delete message')
+      const { data } = await chatsApi.get(chatId)
+      setActiveChat(normalizeChat(data))
+    }
+  }
+
+  // ── Edit a single message content ─────────────────────────────────────────
+  const editMessage = async (chatId: string, messageId: string, content: string) => {
+    // Optimistic update
+    setActiveChat(prev => prev ? {
+      ...prev,
+      messages: prev.messages.map(m =>
+        m.id === messageId ? { ...m, content } : m
+      ),
+    } : prev)
+
+    try {
+      await chatsApi.editMessage(chatId, messageId, content)
+    } catch {
+      toast.error('Failed to edit message')
+      const { data } = await chatsApi.get(chatId)
+      setActiveChat(normalizeChat(data))
+    }
+  }
+
+  // ── Resend — edit then generate a new AI response ─────────────────────────
+  const resendMessage = async (
+    prompt: string,
+    device: string,
+    camera: string,
+    language: string,
+    style: string,
+  ) => {
+    await sendMessage(prompt, device, camera, language, style, activeChat?.id)
+  }
+
   const profileCode = async (code: string, device: string) => {
     try {
       const { data } = await generateApi.profile({ code, device })
@@ -194,7 +236,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     <ChatContext.Provider value={{
       chats, activeChat, generating,
       loadChats, selectChat, newChat, deleteChat, renameChat,
-      sendMessage, profileCode,
+      sendMessage, deleteMessage, editMessage, resendMessage,
+      profileCode,
     }}>
       {children}
     </ChatContext.Provider>
