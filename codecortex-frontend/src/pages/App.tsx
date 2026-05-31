@@ -54,7 +54,7 @@ export default function App() {
         className={`
           ${isDesktop
             ? 'relative h-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out'
-            : 'fixed top-0 left-0 h-full z-50 transition-transform duration-300 ease-in-out shadow-2xl'
+            : `fixed top-0 left-0 h-full z-50 transition-transform duration-300 ease-in-out ${isTablet ? 'shadow-xl' : 'shadow-2xl'}`
           }
         `}
         style={
