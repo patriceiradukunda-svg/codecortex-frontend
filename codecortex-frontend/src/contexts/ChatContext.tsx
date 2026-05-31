@@ -48,13 +48,37 @@ function normalizeTimestamp(ts: any): string {
   }
 }
 
+function normalizeMetrics(m: any): ProfilingMetrics | undefined {
+  if (!m) return undefined
+  return {
+    flash:          m.flash,
+    ram:            m.ram,
+    latency:        m.latency,
+    energy:         m.energy,
+    complexity:     m.complexity,
+    complexityDesc: m.complexityDesc ?? m.complexity_desc ?? '',
+    cpuFreq:        m.cpuFreq       ?? m.cpu_freq,
+    notes:          m.notes,
+  }
+}
+
 function normalizeChat(chat: any): Chat {
   return {
-    ...chat,
-    createdAt: normalizeTimestamp(chat.createdAt ?? chat.created_at),
-    updatedAt: normalizeTimestamp(chat.updatedAt ?? chat.updated_at),
+    id:          chat.id ?? String(chat._id ?? ''),
+    userId:      chat.userId    ?? chat.user_id    ?? '',
+    title:       chat.title     ?? 'New Chat',
+    lastMcu:     chat.lastMcu   ?? chat.last_mcu   ?? undefined,
+    lastCamera:  chat.lastCamera ?? chat.last_camera ?? undefined,
+    lastCode:    chat.lastCode  ?? chat.last_code  ?? undefined,
+    lastMetrics: normalizeMetrics(chat.lastMetrics ?? chat.last_metrics),
+    createdAt:   normalizeTimestamp(chat.createdAt ?? chat.created_at),
+    updatedAt:   normalizeTimestamp(chat.updatedAt ?? chat.updated_at),
     messages: (chat.messages ?? []).map((msg: any) => ({
-      ...msg,
+      id:        msg.id      ?? String(msg._id ?? Date.now()),
+      role:      msg.role,
+      content:   msg.content,
+      code:      msg.code    ?? undefined,
+      metrics:   normalizeMetrics(msg.metrics),
       timestamp: normalizeTimestamp(msg.timestamp),
     })),
   }
@@ -152,7 +176,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         role: 'assistant',
         content: data.explanation,
         code: data.code,
-        metrics: data.metrics,
+        metrics: normalizeMetrics(data.metrics),
         timestamp: new Date().toISOString(),
       }
 
@@ -160,7 +184,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         ...prev,
         messages: [...prev.messages, aiMsg],
         lastCode: data.code,
-        lastMetrics: data.metrics,
+        lastMetrics: normalizeMetrics(data.metrics),
         lastMcu: device,
         lastCamera: camera,
       } : prev)
@@ -183,9 +207,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // ── Delete a single message ───────────────────────────────────────────────
   const deleteMessage = async (chatId: string, messageId: string) => {
-    // Optimistic update — remove immediately from UI
     setActiveChat(prev => prev ? {
       ...prev,
       messages: prev.messages.filter(m => m.id !== messageId),
@@ -195,19 +217,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       await chatsApi.deleteMessage(chatId, messageId)
     } catch {
       toast.error('Failed to delete message')
-      // Rollback by reloading from server
       const { data } = await chatsApi.get(chatId)
       setActiveChat(normalizeChat(data))
     }
   }
 
-  // ── Edit a single message ─────────────────────────────────────────────────
   const editMessage = async (
     chatId: string,
     messageId: string,
     content: string,
   ) => {
-    // Optimistic update
     setActiveChat(prev => prev ? {
       ...prev,
       messages: prev.messages.map(m =>
@@ -219,13 +238,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       await chatsApi.editMessage(chatId, messageId, content)
     } catch {
       toast.error('Failed to edit message')
-      // Rollback
       const { data } = await chatsApi.get(chatId)
       setActiveChat(normalizeChat(data))
     }
   }
 
-  // ── Resend — send the same prompt again in the active chat ────────────────
   const resendMessage = async (
     prompt: string,
     device: string,
@@ -239,8 +256,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const profileCode = async (code: string, device: string) => {
     try {
       const { data } = await generateApi.profile({ code, device })
-      setActiveChat(prev => prev ? { ...prev, lastMetrics: data } : prev)
-      return data
+      setActiveChat(prev => prev
+        ? { ...prev, lastMetrics: normalizeMetrics(data) }
+        : prev
+      )
+      return normalizeMetrics(data) ?? null
     } catch {
       toast.error('Profiling failed')
       return null
