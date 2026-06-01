@@ -9,7 +9,7 @@ interface ChatContextType {
   generating: boolean
   loadChats: () => Promise<void>
   selectChat: (id: string) => Promise<void>
-  newChat: () => Promise<void>
+  newChat: () => Promise<Chat | null>
   deleteChat: (id: string) => Promise<void>
   renameChat: (id: string, title: string) => Promise<void>
   sendMessage: (
@@ -111,17 +111,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setActiveChat(normalizeChat(data))
   }
 
-  const newChat = async () => {
+  // Issue #7 fix: newChat now RETURNS the created chat so callers can use
+  // the stable ID directly, rather than reading from state (which is async
+  // and may not have updated by the time the caller needs it).
+  const newChat = async (): Promise<Chat | null> => {
     const existingEmpty = chats.find(isEmptyChat)
     if (existingEmpty) {
       setActiveChat(existingEmpty)
       toast('You already have an empty chat', { icon: '💬' })
-      return
+      return existingEmpty
     }
-    const { data } = await chatsApi.create()
-    const normalized = normalizeChat(data)
-    setChats(prev => [normalized, ...prev])
-    setActiveChat(normalized)
+    try {
+      const { data } = await chatsApi.create()
+      const normalized = normalizeChat(data)
+      setChats(prev => [normalized, ...prev])
+      setActiveChat(normalized)
+      return normalized
+    } catch {
+      toast.error('Failed to create chat')
+      return null
+    }
   }
 
   const deleteChat = async (id: string) => {
@@ -149,8 +158,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     style: string = 'clean',
     chatId?: string | null,
   ) => {
-    const resolvedChatId = chatId ?? activeChat?.id
-    if (!resolvedChatId && !chats.length) await newChat()
+    // Issue #7 fix: resolve the chat ID synchronously before touching state.
+    // If no chatId is provided and there is no active chat, create one and
+    // capture the returned ID directly — do NOT read from state afterwards.
+    let resolvedChatId = chatId ?? activeChat?.id ?? null
+
+    if (!resolvedChatId) {
+      const created = await newChat()
+      if (!created) return  // newChat failed and already showed a toast
+      resolvedChatId = created.id
+    }
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -189,17 +206,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         lastCamera: camera,
       } : prev)
 
-      if (!resolvedChatId) {
-        setChats(prev => prev.map(c =>
-          c.id === data.chatId
-            ? { ...c, title: prompt.slice(0, 40) + (prompt.length > 40 ? '…' : '') }
-            : c
-        ))
-      }
+      // Update the sidebar title on first message in a brand-new chat
+      setChats(prev => prev.map(c =>
+        c.id === data.chatId
+          ? { ...c, title: prompt.slice(0, 40) + (prompt.length > 40 ? '…' : '') }
+          : c
+      ))
     } catch (e: any) {
       toast.error(e?.response?.data?.detail || 'Generation failed')
+      // Issue #6 fix: roll back the optimistically added user message
       setActiveChat(prev => prev
-        ? { ...prev, messages: prev.messages.slice(0, -1) }
+        ? { ...prev, messages: prev.messages.filter(m => m.id !== userMsg.id) }
         : prev
       )
     } finally {
@@ -208,6 +225,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }
 
   const deleteMessage = async (chatId: string, messageId: string) => {
+    // Snapshot for rollback before optimistic update (Issue #6 fix)
+    const snapshot = activeChat ? { ...activeChat, messages: [...activeChat.messages] } : null
+
     setActiveChat(prev => prev ? {
       ...prev,
       messages: prev.messages.filter(m => m.id !== messageId),
@@ -217,8 +237,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       await chatsApi.deleteMessage(chatId, messageId)
     } catch {
       toast.error('Failed to delete message')
-      const { data } = await chatsApi.get(chatId)
-      setActiveChat(normalizeChat(data))
+      // Issue #6 fix: restore the exact pre-mutation snapshot instead of
+      // re-fetching (avoids the navigation-away race condition)
+      if (snapshot) setActiveChat(snapshot)
     }
   }
 
@@ -227,6 +248,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     messageId: string,
     content: string,
   ) => {
+    // Snapshot for rollback (Issue #6 fix)
+    const snapshot = activeChat ? { ...activeChat, messages: [...activeChat.messages] } : null
+
     setActiveChat(prev => prev ? {
       ...prev,
       messages: prev.messages.map(m =>
@@ -238,8 +262,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       await chatsApi.editMessage(chatId, messageId, content)
     } catch {
       toast.error('Failed to edit message')
-      const { data } = await chatsApi.get(chatId)
-      setActiveChat(normalizeChat(data))
+      if (snapshot) setActiveChat(snapshot)
     }
   }
 
