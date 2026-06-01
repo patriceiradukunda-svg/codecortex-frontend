@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User } from '@/types'
-import { authApi } from '@/services/api'
+import { authApi, setAccessToken, setRefreshToken, clearTokens, getRefreshToken } from '@/services/api'
 
 interface AuthContextType {
   user: User | null
@@ -15,15 +15,23 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser]       = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      authApi.me()
+    // Issue #2 fix: on page load, try to restore a session via the refresh token
+    // stored in sessionStorage. If it works we get a fresh access token (memory)
+    // and update the user. If not, we clear everything and stay logged out.
+    const refresh = getRefreshToken()
+    if (refresh) {
+      authApi.refresh(refresh)
+        .then(({ data }) => {
+          setAccessToken(data.accessToken)
+          setRefreshToken(data.refreshToken)  // rotate
+          return authApi.me()
+        })
         .then(r => setUser(r.data))
-        .catch(() => localStorage.clear())
+        .catch(() => clearTokens())
         .finally(() => setLoading(false))
     } else {
       setLoading(false)
@@ -31,8 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const saveTokens = (accessToken: string, refreshToken: string) => {
-    localStorage.setItem('access_token', accessToken)
-    localStorage.setItem('refresh_token', refreshToken)
+    setAccessToken(accessToken)
+    setRefreshToken(refreshToken)
   }
 
   const login = async (email: string, password: string) => {
@@ -58,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await authApi.logout().catch(() => {})
-    localStorage.clear()
+    clearTokens()
     setUser(null)
   }
 
