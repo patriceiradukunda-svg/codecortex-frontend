@@ -75,6 +75,25 @@ export default function App() {
       {/* ── Main content ── */}
       <div className="flex flex-1 flex-col min-w-0 h-full overflow-hidden">
 
+        {/* ── Desktop top tab bar (only show on desktop) ── */}
+        {isDesktop && (
+          <div className="flex border-b border-gray-200 bg-white shrink-0 safe-top">
+            {(['chat', 'profiler'] as const).map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 py-2.5 text-xs font-semibold transition-all
+                  ${activeTab === tab
+                    ? 'text-[#E07820] border-b-2 border-[#E07820] bg-orange-50/50'
+                    : 'text-gray-400 hover:text-gray-600'
+                  }`}
+              >
+                {tab === 'chat' ? '💬 Chat' : '📊 Profiler'}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* ── Content area ── */}
         <div className="flex flex-1 min-h-0 overflow-hidden">
 
@@ -107,7 +126,7 @@ export default function App() {
         </div>
 
         {/* ── Mobile bottom nav ── */}
-        {!isDesktop && (
+        {isMobile && (
           <nav className="flex items-center justify-around px-4 py-2 bg-white
                           border-t border-gray-200 shrink-0 safe-bottom">
             <button
