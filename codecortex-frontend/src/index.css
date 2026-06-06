@@ -148,8 +148,42 @@
   .animate-pulse-slow {
     animation: pulse 3s ease-in-out infinite;
   }
+
+  /* New animations for input focus */
+  .animate-input-focus {
+    animation: inputFocus 0.3s ease-out;
+  }
+  .animate-input-blur {
+    animation: inputBlur 0.2s ease-out;
+  }
+
+  /* Button pulse for "ready to send" state */
+  .animate-button-ready {
+    animation: buttonReady 1.5s ease-in-out infinite;
+  }
+
+  /* Smooth scale on send button hover */
+  .animate-send-hover {
+    animation: sendHover 0.3s ease-out;
+  }
+
+  /* Smooth height expansion for textarea */
+  .animate-textarea-expand {
+    animation: textareaExpand 0.2s ease-out;
+  }
+
+  /* Character counter warn animation */
+  .animate-counter-warn {
+    animation: counterWarn 0.4s ease-in-out;
+  }
+
+  /* Icon spin for generating state */
+  .animate-icon-spin {
+    animation: iconSpin 1s linear infinite;
+  }
 }
 
+/* Keyframe definitions */
 @keyframes slideUp {
   from { transform: translateY(6px); opacity: 0; }
   to   { transform: translateY(0);   opacity: 1; }
@@ -158,4 +192,153 @@
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+/* Input focus expansion — container grows slightly */
+@keyframes inputFocus {
+  from {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transform: scale(0.995);
+  }
+  to {
+    box-shadow: 0 8px 24px rgba(224, 120, 32, 0.20);
+    transform: scale(1);
+  }
+}
+
+/* Input blur shrink */
+@keyframes inputBlur {
+  from {
+    box-shadow: 0 8px 24px rgba(224, 120, 32, 0.20);
+    transform: scale(1);
+  }
+  to {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transform: scale(0.99);
+  }
+}
+
+/* Send button subtle pulse when ready */
+@keyframes buttonReady {
+  0%, 100% {
+    box-shadow: 0 4px 16px rgba(192, 106, 26, 0.35);
+  }
+  50% {
+    box-shadow: 0 6px 20px rgba(192, 106, 26, 0.45);
+  }
+}
+
+/* Send button hover scale */
+@keyframes sendHover {
+  from { transform: scale(1); }
+  to   { transform: scale(1.02); }
+}
+
+/* Textarea smooth expansion */
+@keyframes textareaExpand {
+  from {
+    max-height: 44px;
+    opacity: 0.8;
+  }
+  to {
+    max-height: 120px;
+    opacity: 1;
+  }
+}
+
+/* Character counter warning pulse */
+@keyframes counterWarn {
+  0%, 100% { color: #f59e0b; transform: scale(1); }
+  50%      { color: #dc2626; transform: scale(1.1); }
+}
+
+/* Icon continuous spin for "generating" state */
+@keyframes iconSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Custom focus utilities ── */
+@layer components {
+  /* Bright focus ring for inputs and buttons */
+  .focus-ring-brand {
+    @apply outline-none focus:ring-2 focus:ring-[#E07820]/30 focus:border-[#E07820];
+  }
+
+  /* Glow effect for important interactive elements */
+  .glow-brand {
+    filter: drop-shadow(0 0 8px rgba(224, 120, 32, 0.3));
+  }
+  .glow-brand-hover:hover {
+    filter: drop-shadow(0 0 12px rgba(224, 120, 32, 0.5));
+    transition: filter 0.3s ease-out;
+  }
+
+  /* Smooth transitions for all interactive elements */
+  .smooth-interactive {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  /* Subtle background color transition */
+  .bg-fade {
+    @apply transition-colors duration-300;
+  }
+}
+
+/* ── Responsive typography ── */
+@layer utilities {
+  /* Ensure text doesn't shift on focus */
+  .text-stable {
+    @apply text-[11px] leading-tight;
+  }
+}
+
+/* ── Mobile-specific improvements ── */
+@media (max-width: 768px) {
+  /* Larger tap targets on mobile */
+  button, a, [role="button"] {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Prevent zoom on input focus (iOS) */
+  input, textarea, select {
+    font-size: 16px;
+  }
+
+  /* Smoother scrolling on mobile */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+}
+
+/* ── Accessibility improvements ── */
+@layer utilities {
+  /* High contrast mode support */
+  @media (prefers-contrast: more) {
+    .btn-brand {
+      @apply border border-[#C06A1A];
+    }
+    .input-field {
+      @apply border-2 border-gray-600;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Dark mode (if needed in future) */
+  @media (prefers-color-scheme: dark) {
+    body {
+      @apply bg-gray-900 text-gray-100;
+    }
+  }
 }
