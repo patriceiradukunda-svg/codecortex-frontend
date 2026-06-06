@@ -123,7 +123,7 @@ export default function Sidebar({ onOpenAuth, onOpenSettings, onClose }: Sidebar
   }
 
   // Fix #7: search always visible when user is logged in, not conditionally by count
-  const filtered = chats.filter(c =>
+  const filtered = chats.filter((c: Chat) =>
     c.title.toLowerCase().includes(search.toLowerCase())
   )
 
