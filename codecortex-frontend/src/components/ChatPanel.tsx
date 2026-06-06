@@ -3,11 +3,12 @@ import {
   Send, Loader2, Brain, Cpu, Camera, Settings2,
   PanelLeftOpen, PanelLeftClose, Copy, Check,
   ChevronDown, Activity, CheckCircle2,
-  Pencil, RotateCcw, Trash2, LogIn,
+  Pencil, RotateCcw, Trash2, LogIn, Sparkles,
 } from 'lucide-react'
 import { useChat } from '@/contexts/ChatContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { DEVICES, CAMERAS } from '@/types'
+import { Message } from '@/types'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { formatDistanceToNow } from 'date-fns'
@@ -25,7 +26,6 @@ interface ChatPanelProps {
 type Language    = 'C' | 'C++' | 'Python'
 type OutputStyle = 'clean' | 'commented' | 'guide'
 
-// Fix #9: return "just now" instead of '' for very fresh timestamps
 function formatTime(timestamp: any): string {
   try {
     if (!timestamp) return 'just now'
@@ -90,7 +90,6 @@ function MessageText({ text }: { text: string }) {
   )
 }
 
-// Fix #6: CopyButton shows confirmation tick + "Copied!" text
 function CopyButton({ text, size = 13, showLabel = false }: { text: string; size?: number; showLabel?: boolean }) {
   const [copied, setCopied] = useState(false)
   const copy = async () => {
@@ -99,7 +98,6 @@ function CopyButton({ text, size = 13, showLabel = false }: { text: string; size
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // fallback for browsers blocking clipboard
       const ta = document.createElement('textarea')
       ta.value = text
       document.body.appendChild(ta)
@@ -154,6 +152,7 @@ export default function ChatPanel({
   const [camera, setCamera]                   = useState('OV2640')
   const [showScrollBtn, setShowScrollBtn]     = useState(false)
   const [mobileTab, setMobileTab]             = useState<'chat' | 'profiler'>('chat')
+  const [inputFocused, setInputFocused]       = useState(false)
 
   const [showLangPicker, setShowLangPicker]   = useState(false)
   const [showStylePicker, setShowStylePicker] = useState(false)
@@ -177,7 +176,6 @@ export default function ChatPanel({
   const scrollToBottom = () => bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   useEffect(() => { scrollToBottom() }, [activeChat?.messages])
 
-  // Fix #8: Escape closes pickers
   useEffect(() => {
     if (!showLangPicker && !showStylePicker) return
     const handler = (e: KeyboardEvent) => {
@@ -258,7 +256,7 @@ export default function ChatPanel({
     await deleteMessage(activeChat.id, msgId)
   }
 
-  const handleResend = async (content: string, msgIndex: number) => {
+  const handleResend = async (content: string, msgIndex: number): Promise<void> => {
     if (!activeChat || generating) return
     setActiveChat((prev: any) => prev ? {
       ...prev,
@@ -269,7 +267,7 @@ export default function ChatPanel({
 
   // ── Normalize messages ────────────────────────────────────────────────────
 
-  const messages = (activeChat?.messages ?? []).map(msg => ({
+  const messages = (activeChat?.messages ?? []).map((msg: Message) => ({
     ...msg,
     timestamp: (() => {
       try {
@@ -282,7 +280,8 @@ export default function ChatPanel({
   }))
 
   const charsLeft = MAX_CHARS - prompt.length
-  const charsWarn = charsLeft < 200
+  const charsWarn = charsLeft < 300
+  const charsCritical = charsLeft < 100
   const langMeta  = getLangMeta(lastLang)
 
   return (
@@ -306,7 +305,6 @@ export default function ChatPanel({
       <header className="flex items-center justify-between px-3 py-2.5
                          bg-white border-b border-gray-200 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          {/* Fix #2: Tailwind hover class instead of onMouseEnter/Leave */}
           <button
             onClick={onToggleSidebar}
             className="shrink-0 p-1.5 rounded-lg text-gray-400
@@ -409,7 +407,6 @@ export default function ChatPanel({
                     <button
                       key={s.text}
                       onClick={() => {
-                        // Fix #3: if not logged in, prompt login instead of silently filling
                         if (!user) return onOpenAuth('login')
                         setPrompt(s.text)
                       }}
@@ -424,7 +421,6 @@ export default function ChatPanel({
                                          group-hover:text-gray-700 leading-snug block">
                           {s.text}
                         </span>
-                        {/* Fix #3: show sign-in hint for guests */}
                         {!user && (
                           <span className="text-[10px] text-[#E07820] flex items-center gap-0.5 mt-0.5">
                             <LogIn size={9} /> Sign in to use
@@ -438,7 +434,7 @@ export default function ChatPanel({
             )}
 
             {/* ── Message bubbles ── */}
-            {messages.map((msg, msgIndex) => {
+            {messages.map((msg: Message, msgIndex: number) => {
               const isUser = msg.role === 'user'
               const { clean, isGenerated } = isUser
                 ? { clean: msg.content, isGenerated: false }
@@ -528,7 +524,6 @@ export default function ChatPanel({
                               {msg.content}
                             </div>
 
-                            {/* Fix #2: Tailwind-based hover instead of onMouseEnter/Leave */}
                             <div className="flex gap-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity">
                               <button
                                 onClick={() => handleStartEdit(msg.id, msg.content)}
@@ -581,7 +576,6 @@ export default function ChatPanel({
                           <MessageText text={clean} />
                           <div className="absolute top-2 right-2 flex gap-1
                                           opacity-0 group-hover/bubble:opacity-100 transition-opacity">
-                            {/* Fix #6: CopyButton with visible label and green tick */}
                             <CopyButton text={clean} size={12} showLabel />
                             <button
                               onClick={() => handleDeleteMessage(msg.id)}
@@ -634,7 +628,6 @@ export default function ChatPanel({
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] text-gray-400 font-mono uppercase">{syntax}</span>
-                                {/* Fix #6: code copy button also shows tick */}
                                 <CopyButton text={msg.code} size={10} showLabel />
                               </div>
                             </div>
@@ -656,7 +649,6 @@ export default function ChatPanel({
                       </div>
                     )}
 
-                    {/* Fix #9: always show a timestamp, never empty */}
                     <span className="text-[10px] text-gray-400 px-1">
                       {formatTime(msg.timestamp)}
                     </span>
@@ -695,7 +687,7 @@ export default function ChatPanel({
           {showScrollBtn && (
             <button
               onClick={scrollToBottom}
-              className="absolute bottom-[160px] right-4 z-10 w-8 h-8 rounded-full
+              className="absolute bottom-[220px] right-4 z-10 w-8 h-8 rounded-full
                          bg-[#E07820] hover:bg-[#C06A1A] text-white
                          shadow-lg shadow-[#C06A1A]/20
                          flex items-center justify-center transition-all animate-fade-in"
@@ -704,98 +696,168 @@ export default function ChatPanel({
             </button>
           )}
 
-          {/* ── Input area ── */}
+          {/* ════════════════════════════════════════════════════════════════
+              ── REDESIGNED INPUT AREA ──
+              ════════════════════════════════════════════════════════════════ */}
           <div
-            className="bg-white border-t border-gray-200 shrink-0 px-3 sm:px-4 pt-3"
-            style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
+            className="bg-white shrink-0 px-3 sm:px-5 pt-4"
+            style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
           >
-            {/* Device + Camera */}
-            <div className="flex gap-2 mb-2.5">
-              <div className="flex-1 min-w-0">
-                <label className="text-[10px] text-gray-400 mb-1 flex items-center gap-1">
-                  <Cpu size={9} /> Target Device
-                </label>
-                <select
-                  value={device}
-                  onChange={e => setDevice(e.target.value)}
-                  className="w-full text-xs rounded-lg border border-gray-200 bg-white
-                             text-gray-700 px-2.5 py-1.5 focus:outline-none
-                             focus:border-[#E07820] focus:ring-1
-                             focus:ring-[#E07820]/30 transition-all"
-                >
-                  {DEVICES.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
+            {/* Device + Camera — now part of the visual context */}
+            <div className="mb-4">
+              <div className="grid grid-cols-2 gap-2.5 mb-3">
+                <div className="relative">
+                  <label className="text-[11px] font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5 block">
+                    <Cpu size={13} className="text-[#E07820]" />
+                    MCU
+                  </label>
+                  <select
+                    value={device}
+                    onChange={e => setDevice(e.target.value)}
+                    className="w-full text-xs rounded-lg border-2 border-gray-200 bg-white
+                               text-gray-700 px-2.5 py-2 focus:outline-none
+                               focus:border-[#E07820] focus:ring-2
+                               focus:ring-[#E07820]/20 transition-all cursor-pointer
+                               font-medium"
+                  >
+                    {DEVICES.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div className="relative">
+                  <label className="text-[11px] font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5 block">
+                    <Camera size={13} className="text-[#E07820]" />
+                    Camera
+                  </label>
+                  <select
+                    value={camera}
+                    onChange={e => setCamera(e.target.value)}
+                    className="w-full text-xs rounded-lg border-2 border-gray-200 bg-white
+                               text-gray-700 px-2.5 py-2 focus:outline-none
+                               focus:border-[#E07820] focus:ring-2
+                               focus:ring-[#E07820]/20 transition-all cursor-pointer
+                               font-medium"
+                  >
+                    {CAMERAS.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <label className="text-[10px] text-gray-400 mb-1 flex items-center gap-1">
-                  <Camera size={9} /> Camera Module
-                </label>
-                <select
-                  value={camera}
-                  onChange={e => setCamera(e.target.value)}
-                  className="w-full text-xs rounded-lg border border-gray-200 bg-white
-                             text-gray-700 px-2.5 py-1.5 focus:outline-none
-                             focus:border-[#E07820] focus:ring-1
-                             focus:ring-[#E07820]/30 transition-all"
-                >
-                  {CAMERAS.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
+
+              {/* Last used lang indicator */}
+              {lastLang && (
+                <div className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-3">
+                  <span className="inline-block px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
+                    {langMeta.label}
+                  </span>
+                  <span>Language selected on send</span>
+                </div>
+              )}
             </div>
 
-            {/* Last used lang hint */}
-            {lastLang && (
-              <p className="text-[10px] text-gray-400 mb-2">
-                Last used: <span className="text-[#C06A1A]">{langMeta.label}</span>
-                {' · '}
-                <span className="text-gray-400">Language and style selected on send ↗</span>
-              </p>
-            )}
+            {/* ── Main input section ── */}
+            <div
+              className={`transition-all duration-300 rounded-2xl border-2 p-4
+                          ${inputFocused
+                            ? 'border-[#E07820] bg-white shadow-lg shadow-[#E07820]/15'
+                            : 'border-gray-200 bg-gradient-to-br from-gray-50 to-white shadow-md'
+                          }`}
+              style={{
+                boxShadow: inputFocused 
+                  ? '0 8px 24px rgba(224, 120, 32, 0.20)' 
+                  : '0 2px 8px rgba(0, 0, 0, 0.05)'
+              }}
+            >
+              {/* Input container with icon */}
+              <div className="flex gap-3 items-start mb-3">
+                <div className={`flex-shrink-0 p-2.5 rounded-xl transition-all
+                  ${inputFocused
+                    ? 'bg-[#E07820]/10 text-[#E07820]'
+                    : 'bg-gray-100 text-gray-400'
+                  }`}
+                >
+                  {inputFocused ? <Sparkles size={18} /> : <Pencil size={18} />}
+                </div>
 
-            {/* Textarea + Send */}
-            <div className="flex gap-2 items-end">
-              <div className="flex-1 relative min-w-0">
-                <textarea
-                  ref={textareaRef}
-                  value={prompt}
-                  onChange={handleTextareaChange}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Describe the embedded CV code you need…"
-                  className="w-full text-sm rounded-xl border border-gray-200 bg-white
-                             text-gray-800 placeholder-gray-400 px-3.5 py-2.5 pr-14
-                             focus:outline-none focus:border-[#E07820] focus:ring-2
-                             focus:ring-[#E07820]/20 transition-all resize-none
-                             leading-relaxed"
-                  style={{ height: '44px', minHeight: '44px', maxHeight: '160px' }}
-                />
-                {prompt.length > 0 && (
-                  <span
-                    className={`absolute bottom-2.5 right-3 text-[10px]
-                                  pointer-events-none transition-colors
-                      ${charsWarn ? 'text-amber-500' : 'text-gray-400'}`}
-                  >
-                    {charsLeft}
-                  </span>
-                )}
+                <div className="flex-1 min-w-0">
+                  <textarea
+                    ref={textareaRef}
+                    value={prompt}
+                    onChange={handleTextareaChange}
+                    onKeyDown={handleKeyDown}
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
+                    placeholder="e.g., 'Initialize DCMI camera on STM32H7' or 'Run TFLite on ESP32-CAM'…"
+                    className="w-full text-sm bg-transparent text-gray-800
+                               placeholder:text-gray-400 focus:outline-none resize-none
+                               leading-relaxed font-medium"
+                    style={{ height: '44px', minHeight: '44px', maxHeight: '120px' }}
+                  />
+                </div>
               </div>
+
+              {/* Character counter + keyboard hints */}
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="flex gap-1.5 flex-wrap">
+                  {/* Keyboard hint badges */}
+                  <div className={`text-[10px] font-semibold px-2.5 py-1 rounded-full
+                    ${inputFocused
+                      ? 'bg-[#E07820]/10 text-[#E07820]'
+                      : 'bg-gray-100 text-gray-400'
+                    }`}>
+                    ⏎ Send
+                  </div>
+                  <div className="text-[10px] font-semibold px-2.5 py-1 rounded-full
+                                 bg-gray-100 text-gray-400">
+                    ⇧⏎ New line
+                  </div>
+                </div>
+
+                {/* Character counter with color warnings */}
+                <div className={`text-[11px] font-bold font-mono transition-colors
+                  ${charsCritical
+                    ? 'text-red-500'
+                    : charsWarn
+                    ? 'text-amber-500'
+                    : 'text-gray-400'
+                  }`}>
+                  {charsLeft} / {MAX_CHARS}
+                </div>
+              </div>
+
+              {/* Send button — large and prominent */}
               <button
                 onClick={handleSend}
                 disabled={!prompt.trim() || generating}
-                className="bg-[#E07820] hover:bg-[#C06A1A] disabled:opacity-40
-                           text-white rounded-xl px-4 h-[44px] flex items-center
-                           justify-center shrink-0 transition-all shadow-sm
-                           shadow-[#C06A1A]/20 active:scale-95"
+                className={`w-full py-3 px-4 flex items-center justify-center gap-2.5
+                           font-semibold text-sm rounded-xl transition-all duration-200
+                           text-white
+                           ${generating
+                             ? 'opacity-60 cursor-wait'
+                             : prompt.trim()
+                             ? 'hover:shadow-lg hover:shadow-[#C06A1A]/30 active:scale-[0.98] cursor-pointer'
+                             : 'opacity-40 cursor-not-allowed'
+                           }`}
+                style={{
+                  background: prompt.trim() 
+                    ? 'linear-gradient(135deg, #E07820 0%, #C06A1A 100%)'
+                    : '#d1d5db',
+                  boxShadow: prompt.trim() && !generating
+                    ? '0 4px 16px rgba(192, 106, 26, 0.35)'
+                    : 'none'
+                }}
               >
-                {generating
-                  ? <Loader2 size={16} className="animate-spin" />
-                  : <Send size={15} />
-                }
+                {generating ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Generating…
+                  </>
+                ) : (
+                  <>
+                    <Send size={18} />
+                    Generate Code
+                  </>
+                )}
               </button>
             </div>
-
-            <p className="text-[10px] text-gray-400 text-center mt-2 mb-3">
-              Enter to send · Shift+Enter for new line
-            </p>
           </div>
         </div>
 
